@@ -1,0 +1,3 @@
+UCLASS()
+class UAsGameInstance: UGameInstance {
+}
