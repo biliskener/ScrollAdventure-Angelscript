@@ -15,6 +15,9 @@ class AAsPlayer : APaperCharacter {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
     USoundCue GuardSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
+    USoundCue AttackSound;
+
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
 
@@ -45,23 +48,28 @@ class AAsPlayer : APaperCharacter {
         ScriptInputComponent.BindAction(n"Roll", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnRollReleased"));
         ScriptInputComponent.BindAction(n"Guard", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnGuardPressed"));
         ScriptInputComponent.BindAction(n"Guard", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnGuardReleased"));
+        ScriptInputComponent.BindAction(n"Attack", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnAttackPressed"));
+        ScriptInputComponent.BindAction(n"Attack", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnAttackReleased"));
     }
 
 	UFUNCTION()
 	void MoveRight(float32 AxisValue) {
         if(CanMove()) {
-            this.AddMovementInput(FVector(1.0, 0.0, 0.0), AxisValue);
-            HandleOrientation(AxisValue);
-            if(this.bRolling) {
-                this.HandleRolling();
-            }
-            else {
-                if(CharacterMovement.IsFalling()) {
+            if(!bAttacking) {
+                this.AddMovementInput(FVector(1.0, 0.0, 0.0), AxisValue);
+                HandleOrientation(AxisValue);
+                if(this.bRolling) {
+                    this.HandleRolling();
+                }
+                else if(CharacterMovement.IsFalling()) {
                     this.HandleJumpOrFalling();
                 }
                 else {
                     this.HandleIdleOrRunning(AxisValue);
                 }
+            }
+            else {
+                HandleAttack();
             }
         }
     }
@@ -162,6 +170,33 @@ class AAsPlayer : APaperCharacter {
         OnGuardReleasedEx();
     }
 
+    UFUNCTION()
+    void OnAttackPressed(FKey Key) {
+        if(CanAttack()) {
+            bAttacking = true;
+            FVector Location = GetActorLocation();
+            TArray<EObjectTypeQuery> ObjectTypes;
+            FHitResult HitResult;
+            ObjectTypes.Add(EObjectTypeQuery::Pawn);
+            if(System::LineTraceSingleForObjects(Location, FVector(Location.X + Sprite.GetForwardVector().X * 160.0, Location.Y, Location.Z), ObjectTypes, false, TArray<AActor>(), EDrawDebugTrace::Persistent, HitResult, true)) {
+                Print(HitResult.Actor.ToString());
+            }
+            Gameplay::SpawnSoundAtLocation(AttackSound, GetActorLocation());
+            UPaperFlipbook AttackAnimation = Animations[n"Attack"];
+            System::SetTimer(this, n"OnAttackTimeout", AttackAnimation.TotalDuration, false);
+        }
+    }
+
+    UFUNCTION()
+    void OnAttackReleased(FKey Key) {
+
+    }
+
+    UFUNCTION()
+    void OnAttackTimeout() {
+        bAttacking = false;
+    }
+
     void HandleOrientation(float32 AxisValue) {
         if(AxisValue > 0.0) {
             bIsRight = true;
@@ -195,6 +230,10 @@ class AAsPlayer : APaperCharacter {
         this.Sprite.SetFlipbook(Animations[n"Rolling"]);
     }
 
+    void HandleAttack() {
+        this.Sprite.SetFlipbook(Animations[n"Attack"]);
+    }
+
     bool CanJump() {
         return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
@@ -213,5 +252,9 @@ class AAsPlayer : APaperCharacter {
 
     bool CanGuard() {
         return !CharacterMovement.IsFalling() && !bDead && !bGuardCooling && !bRolling && !bHit;
+    }
+
+    bool CanAttack() {
+        return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bHit && !bAttacking;
     }
 }
