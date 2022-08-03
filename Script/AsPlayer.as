@@ -35,7 +35,13 @@ class AAsPlayer : APaperCharacter {
     bool bHit = false;
     bool bGuardCooling = false;
 
-    FTimerHandle ForceReleaseGuardTimerHandle;
+    bool bSprint = false;
+
+    FTimerHandle GuardPrepareTimerHandle;
+    FTimerHandle GuardLoopTimerHandle;
+    FTimerHandle GuardCoolDownTimerHandle;
+    FTimerHandle AttackTimerHandle;
+    FTimerHandle RollTimerHandle;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
@@ -52,6 +58,25 @@ class AAsPlayer : APaperCharacter {
         ScriptInputComponent.BindAction(n"Attack", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnAttackReleased"));
     }
 
+    UFUNCTION(BlueprintOverride)
+    void EndPlay(EEndPlayReason EndPlayReason) {
+        if(System::IsValidTimerHandle(GuardPrepareTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(GuardPrepareTimerHandle);
+        }
+        if(System::IsValidTimerHandle(GuardLoopTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(GuardLoopTimerHandle);
+        }
+        if(System::IsValidTimerHandle(GuardCoolDownTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(GuardCoolDownTimerHandle);
+        }
+        if(System::IsValidTimerHandle(AttackTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(AttackTimerHandle);
+        }
+        if(System::IsValidTimerHandle(RollTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(RollTimerHandle);
+        }
+    }
+
 	UFUNCTION()
 	void MoveRight(float32 AxisValue) {
         if(CanMove()) {
@@ -59,7 +84,7 @@ class AAsPlayer : APaperCharacter {
                 this.AddMovementInput(FVector(1.0, 0.0, 0.0), AxisValue);
                 HandleOrientation(AxisValue);
                 if(this.bRolling) {
-                    this.HandleRolling();
+                    //this.HandleRolling();
                 }
                 else if(CharacterMovement.IsFalling()) {
                     this.HandleJumpOrFalling();
@@ -69,9 +94,17 @@ class AAsPlayer : APaperCharacter {
                 }
             }
             else {
-                HandleAttack();
+                //HandleAttack();
             }
         }
+        /*
+        if(bSprint && CanSprint()) { // 暂时先这样，没有其它动作时加速动画
+            this.Sprite.SetPlayRate(1.5);
+        }
+        else {
+            this.Sprite.SetPlayRate(1.0);
+        }
+        */
     }
 
     UFUNCTION()
@@ -89,17 +122,19 @@ class AAsPlayer : APaperCharacter {
 
     UFUNCTION()
     void OnSprintPressed(FKey Key) {
-        if(CanSprint()) {
+        if(!bSprint && CanSprint()) {
+            bSprint = true;
             CharacterMovement.MaxWalkSpeed = 1000.0;
-            this.Sprite.SetPlayRate(1.5);
+            //this.Sprite.SetPlayRate(1.5);
         }
     }
 
     UFUNCTION()
     void OnSprintReleased(FKey Key) {
-        if(CanSprint()) {
+        if(bSprint/* && CanSprint()*/) {
+            bSprint = false;
             CharacterMovement.MaxWalkSpeed = 600.0;
-            this.Sprite.SetPlayRate(1.0);
+            //this.Sprite.SetPlayRate(1.0);
         }
     }
 
@@ -111,7 +146,8 @@ class AAsPlayer : APaperCharacter {
             this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
             this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
             Gameplay::SpawnSoundAtLocation(RollingSound, GetActorLocation());
-            System::SetTimer(this, n"OnRollingTimeout", Animations[n"Rolling"].TotalDuration, false);
+            HandleRolling();
+            RollTimerHandle = System::SetTimer(this, n"OnRollTimeout", Animations[n"Rolling"].TotalDuration, false);
         }
     }
 
@@ -120,7 +156,7 @@ class AAsPlayer : APaperCharacter {
     }
     
     UFUNCTION()
-    void OnRollingTimeout() {
+    void OnRollTimeout() {
         this.bRolling = false;
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
@@ -129,45 +165,61 @@ class AAsPlayer : APaperCharacter {
     UFUNCTION()
     void OnGuardPressed(FKey Key) {
         if(CanGuard()) {
+            Print("OnGuardPressed");
+            if(bAttacking) { // 最好是攻击中不能防御
+                System::ClearAndInvalidateTimerHandle(AttackTimerHandle);
+                bAttacking = false;
+            }
             bGuarding = true;
             UPaperFlipbook GuardAnimation = Animations[n"Guard"];
-            Sprite.SetFlipbook(GuardAnimation);
-            System::SetTimer(this, n"OnGuardTimeout", GuardAnimation.TotalDuration, false);
+            //Sprite.SetFlipbook(GuardAnimation);
+            SetAnimation(n"Guard");
+            GuardPrepareTimerHandle = System::SetTimer(this, n"OnGuardPrepareTimeout", GuardAnimation.TotalDuration, false);
         }
     }
 
     UFUNCTION()
     void OnGuardReleased(FKey Key) {
+        Print("OnGuardReleased");
         OnGuardReleasedEx();
     }
 
     void OnGuardReleasedEx() {
-        if(System::IsValidTimerHandle(ForceReleaseGuardTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(ForceReleaseGuardTimerHandle);
+        if(System::IsValidTimerHandle(GuardPrepareTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(GuardPrepareTimerHandle);
         }
-        bGuarding = false;
-        GuardEffect.Deactivate();
-        bGuardCooling = true;
-        System::SetTimer(this, n"OnGuardCoolingTimeout", 5.0, false);
+        if(System::IsValidTimerHandle(GuardLoopTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(GuardLoopTimerHandle);
+        }
+        if(bGuarding) {
+            bGuarding = false;
+            GuardEffect.Deactivate();
+            bGuardCooling = true;
+            GuardCoolDownTimerHandle = System::SetTimer(this, n"OnGuardCoolDownTimeout", 5.0, false);
+        }
     }
     
     UFUNCTION()
-    void OnGuardTimeout() {
-        Sprite.SetFlipbook(Animations[n"GuardLoop"]);
+    void OnGuardPrepareTimeout() {
+        Print("OnGuardPrepareTimeout");
+        //Sprite.SetFlipbook(Animations[n"GuardLoop"]);
+        SetAnimation(n"GuardLoop");
         GuardEffect.Activate(true);
-        ForceReleaseGuardTimerHandle = System::SetTimer(this, n"OnForceReleaseGuardTimeout", 5.0, false);
         Gameplay::SpawnSoundAtLocation(GuardSound, GetActorLocation(), StartTime = 0.1);
+        GuardLoopTimerHandle = System::SetTimer(this, n"OnGuardLoopTimeout", 5.0, false);
     }
 
     UFUNCTION()
-    void OnGuardCoolingTimeout() {
+    void OnGuardLoopTimeout() {
+        Print("OnGuardLoopTimeout");
+        OnGuardReleasedEx();
+    }
+
+    UFUNCTION()
+    void OnGuardCoolDownTimeout() {
+        Print("OnGuardCoolDownTimeout");
         bGuardCooling = false;
         Gameplay::SpawnEmitterAtLocation(GuardOverParticleSystem, GetActorLocation(), Scale = FVector(2.0, 2.0, 2.0));
-    }
-
-    UFUNCTION()
-    void OnForceReleaseGuardTimeout() {
-        OnGuardReleasedEx();
     }
 
     UFUNCTION()
@@ -183,13 +235,13 @@ class AAsPlayer : APaperCharacter {
             }
             Gameplay::SpawnSoundAtLocation(AttackSound, GetActorLocation());
             UPaperFlipbook AttackAnimation = Animations[n"Attack"];
-            System::SetTimer(this, n"OnAttackTimeout", AttackAnimation.TotalDuration, false);
+            HandleAttack();
+            AttackTimerHandle = System::SetTimer(this, n"OnAttackTimeout", AttackAnimation.TotalDuration, false);
         }
     }
 
     UFUNCTION()
     void OnAttackReleased(FKey Key) {
-
     }
 
     UFUNCTION()
@@ -210,28 +262,44 @@ class AAsPlayer : APaperCharacter {
 
     void HandleIdleOrRunning(float32 AxisValue) {
         if(AxisValue != 0) {
-            this.Sprite.SetFlipbook(Animations[n"Run"]);
+            //this.Sprite.SetFlipbook(Animations[n"Run"]);
+            SetAnimation(n"Run");
         }
         else {
-            this.Sprite.SetFlipbook(Animations[n"Idle"]);
+            //this.Sprite.SetFlipbook(Animations[n"Idle"]);
+            SetAnimation(n"Idle");
         }
     }
 
     void HandleJumpOrFalling() {
         if(CharacterMovement.Velocity.Z > 0) {
-            this.Sprite.SetFlipbook(Animations[n"Jump"]);
+            //this.Sprite.SetFlipbook(Animations[n"Jump"]);
+            SetAnimation(n"Jump");
         }
         else {
-            this.Sprite.SetFlipbook(Animations[n"Falling"]);
+            //this.Sprite.SetFlipbook(Animations[n"Falling"]);
+            SetAnimation(n"Falling");
         }
     }
 
     void HandleRolling() {
-        this.Sprite.SetFlipbook(Animations[n"Rolling"]);
+        //this.Sprite.SetFlipbook(Animations[n"Rolling"]);
+        SetAnimation(n"Rolling");
     }
 
     void HandleAttack() {
-        this.Sprite.SetFlipbook(Animations[n"Attack"]);
+        //this.Sprite.SetFlipbook(Animations[n"Attack"]);
+        SetAnimation(n"Attack");
+    }
+
+    void SetAnimation(FName AnimationName) {
+        this.Sprite.SetFlipbook(Animations[AnimationName]);
+        if(AnimationName.IsEqual(n"Run") && bSprint) {
+            this.Sprite.SetPlayRate(1.5);
+        }
+        else {
+            this.Sprite.SetPlayRate(1.0);
+        }
     }
 
     bool CanJump() {
@@ -255,6 +323,6 @@ class AAsPlayer : APaperCharacter {
     }
 
     bool CanAttack() {
-        return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bHit && !bAttacking;
+        return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
 }
