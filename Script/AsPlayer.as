@@ -24,6 +24,9 @@ class AAsPlayer : APaperCharacter {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     UParticleSystem GuardOverParticleSystem;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TSubclassOf<AAsWave> WaveClass;
+
     bool bIsRight = true;
 
     bool bCanJump = false;
@@ -230,9 +233,11 @@ class AAsPlayer : APaperCharacter {
             TArray<EObjectTypeQuery> ObjectTypes;
             FHitResult HitResult;
             ObjectTypes.Add(EObjectTypeQuery::Pawn);
-            if(System::LineTraceSingleForObjects(Location, FVector(Location.X + Sprite.GetForwardVector().X * 160.0, Location.Y, Location.Z), ObjectTypes, false, TArray<AActor>(), EDrawDebugTrace::Persistent, HitResult, true)) {
+            FVector End(Location.X + Sprite.GetForwardVector().X * 160.0, Location.Y, Location.Z);
+            if(System::LineTraceSingleForObjects(Location, End, ObjectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, HitResult, true)) {
                 Print(HitResult.Actor.ToString());
             }
+            SpawnActor(WaveClass, End, FRotator(bIsRight ? 0: 180, 0, 0));
             Gameplay::SpawnSoundAtLocation(AttackSound, GetActorLocation());
             UPaperFlipbook AttackAnimation = Animations[n"Attack"];
             HandleAttack();

@@ -1,0 +1,3 @@
+UCLASS()
+class AAsEnemyBase : APaperCharacter {
+}
