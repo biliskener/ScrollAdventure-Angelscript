@@ -24,7 +24,7 @@ class AAsPlayer : APaperCharacter {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     UParticleSystem GuardOverParticleSystem;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     TSubclassOf<AAsWave> WaveClass;
 
     bool bIsRight = true;
@@ -235,7 +235,10 @@ class AAsPlayer : APaperCharacter {
             ObjectTypes.Add(EObjectTypeQuery::Pawn);
             FVector End(Location.X + Sprite.GetForwardVector().X * 160.0, Location.Y, Location.Z);
             if(System::LineTraceSingleForObjects(Location, End, ObjectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, HitResult, true)) {
-                Print(HitResult.Actor.ToString());
+                AAsEnemyBase enemy = Cast<AAsEnemyBase>(HitResult.Actor);
+                if(enemy != nullptr) {
+                    enemy.OnHitHandle(1, this, EAsDamageType::Melee);
+                }
             }
             SpawnActor(WaveClass, End, FRotator(bIsRight ? 0: 180, 0, 0));
             Gameplay::SpawnSoundAtLocation(AttackSound, GetActorLocation());
@@ -331,3 +334,4 @@ class AAsPlayer : APaperCharacter {
         return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
 }
+

@@ -43,8 +43,9 @@ class AAsWave: AActor {
     {
         AAsEnemyBase enemy = Cast<AAsEnemyBase>(OtherActor);
         if(enemy != nullptr) {
-            DestroyActor();
             Gameplay::SpawnEmitterAtLocation(HitWallEffect, GetActorLocation(), Scale = FVector(2.0, 2.0, 2.0));
+            enemy.OnHitHandle(1, this, EAsDamageType::Range);
+            DestroyActor();
             return;
         }
 

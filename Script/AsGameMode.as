@@ -1,4 +1,3 @@
 UCLASS()
 class AAsGameMode: AGameModeBase {
-
 }
