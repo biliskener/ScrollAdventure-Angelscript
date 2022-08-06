@@ -24,6 +24,9 @@ class AAsPlayer : AAsCreature {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
     USoundCue mHurtSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
+    USoundBase DeathSound;
+
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
 
@@ -38,6 +41,9 @@ class AAsPlayer : AAsCreature {
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     TSubclassOf<UCameraShakeBase> mCameraShakeClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+    TSubclassOf<UUserWidget> DefeatWidgetClass;
 
     bool bIsRight = true;
 
@@ -62,7 +68,7 @@ class AAsPlayer : AAsCreature {
     int mCurHealth;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    int mMaxHealth = 8;
+    int mMaxHealth = 2;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
@@ -407,7 +413,25 @@ class AAsPlayer : AAsCreature {
     }
 
     void Death() {
-        Print("ToDeath");
+        mIsDead = true;
+        Gameplay::SpawnSoundAtLocation(DeathSound, GetActorLocation(), VolumeMultiplier = 3.0, StartTime = 0.5);
+        this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
+        this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+        SetAnimation(n"Death");
+        System::SetTimer(this, n"OnDeathTimeout", Animations[n"Death"].TotalDuration, false);
+    }
+
+    UFUNCTION()
+    void OnDeathTimeout() {
+        SetAnimation(n"DeathLoop");
+        UUserWidget defeatWidget = WidgetBlueprint::CreateWidget(DefeatWidgetClass, nullptr);
+        defeatWidget.AddToViewport();
+        System::SetTimer(this, n"OnRestartLevel", 2.5, false);
+    }
+
+    UFUNCTION()
+    void OnRestartLevel() {
+        Gameplay::OpenLevel(n"CombatStage");
     }
 }
 

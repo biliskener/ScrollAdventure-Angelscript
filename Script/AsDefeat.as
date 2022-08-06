@@ -1,0 +1,4 @@
+UCLASS()
+class AAsDefeat: UUserWidget {
+
+}
