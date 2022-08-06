@@ -10,6 +10,9 @@ class AAsEnemyBase : APaperCharacter {
 
     EAsDamageType mValidDamageType = EAsDamageType::Both;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+    TMap<FName, UPaperFlipbook> Animations;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BeHit)
     USoundBase BeHitSound;
 
@@ -19,6 +22,7 @@ class AAsEnemyBase : APaperCharacter {
     bool mIsTruningBack = false;
     FTimerHandle mTurnBackTimerHandle;
     FTimerHandle mHurtColorTimerHandle;
+    FTimerHandle mDeathTimerHandle;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
@@ -33,6 +37,9 @@ class AAsEnemyBase : APaperCharacter {
         if(System::IsValidTimerHandle(mHurtColorTimerHandle)) {
             System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
         }
+        if(System::IsValidTimerHandle(mDeathTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(mDeathTimerHandle);
+        }
     }
 
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) {
@@ -43,6 +50,7 @@ class AAsEnemyBase : APaperCharacter {
                 mHealth = Math::Clamp(mHealth - damage, 0, mMaxHealth);
                 ParticleSounds(BeHitSound, 0.1, BeHitEffect, FRotator(0, 0, Math::RandRange(-180, 180)), FVector(1.0, 1.0, 1.0));
                 if(mHealth <= 0) {
+                    Death();
                 }
                 else if(damageType == EAsDamageType::Melee) {
                     FVector attackerPos = damageCauser.GetActorLocation();
@@ -106,5 +114,24 @@ class AAsEnemyBase : APaperCharacter {
             SetActorRotation(FRotator(0.0, mIsRight ? 0.0 : 180.0, 0.0));
         }
         mIsTruningBack = false;
+    }
+
+    void Death() {
+        mIsDead = true;
+        CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
+        CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+        UPaperFlipbook Animation = Animations[n"Death"];
+        Sprite.SetFlipbook(Animation);
+        mDeathTimerHandle = System::SetTimer(this, n"OnDeathTimeout", Animation.TotalDuration, false);
+    }
+
+    UFUNCTION()
+    void OnDeathTimeout() {
+        Sprite.SetFlipbook(Animations[n"DeathLoop"]);
+        ExtraTriggerAfterDeath();
+    }
+
+    void ExtraTriggerAfterDeath() {
+
     }
 }
