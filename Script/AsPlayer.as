@@ -21,14 +21,23 @@ class AAsPlayer : AAsCreature {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
     USoundCue GuardHitSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
+    USoundCue mHurtSound;
+
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+    UParticleSystem mBloodParticleSystem;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     UParticleSystem GuardOverParticleSystem;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     TSubclassOf<AAsWave> WaveClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+    TSubclassOf<UCameraShakeBase> mCameraShakeClass;
 
     bool bIsRight = true;
 
@@ -38,7 +47,7 @@ class AAsPlayer : AAsCreature {
     bool mIsGuarding = false;
     bool mIsRolling = false;
     bool bAttacking = false;
-    bool mIsHit = false;
+    bool mBeHit = false;
     bool bGuardCooling = false;
 
     bool bSprint = false;
@@ -48,9 +57,17 @@ class AAsPlayer : AAsCreature {
     FTimerHandle GuardCoolDownTimerHandle;
     FTimerHandle AttackTimerHandle;
     FTimerHandle RollTimerHandle;
+    FTimerHandle mHurtColorTimerHandle;
+
+    int mCurHealth;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    int mMaxHealth = 8;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
+        mCurHealth = mMaxHealth;
+
         ScriptInputComponent.BindAxis(n"Move", FInputAxisHandlerDynamicSignature(this, n"MoveRight"));
         ScriptInputComponent.BindAction(n"Jump", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnJumpPressed"));
         ScriptInputComponent.BindAction(n"Jump", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnJumpReleased"));
@@ -80,6 +97,9 @@ class AAsPlayer : AAsCreature {
         }
         if(System::IsValidTimerHandle(RollTimerHandle)) {
             System::ClearAndInvalidateTimerHandle(RollTimerHandle);
+        }
+        if(System::IsValidTimerHandle(mHurtColorTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
         }
     }
 
@@ -314,27 +334,27 @@ class AAsPlayer : AAsCreature {
     }
 
     bool CanJump() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
     }
 
     bool CanMove() {
-        return !mIsDead && !mIsGuarding && !mIsHit;
+        return !mIsDead && !mIsGuarding && !mBeHit;
     }
 
     bool CanSprint() {
-        return !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
+        return !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
     }
     
     bool CanRoll() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
     }
 
     bool CanGuard() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !bGuardCooling && !mIsRolling && !mIsHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !bGuardCooling && !mIsRolling && !mBeHit;
     }
 
     bool CanAttack() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
     }
 
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
@@ -345,11 +365,20 @@ class AAsPlayer : AAsCreature {
                     KnockBack(damageCauser);
                 }
                 else {
-                    mIsHit = true;
-                    // cost hp
+                    mBeHit = true;
+                    CostHealth(damage, damageCauser);
+                    Sprite.SetSpriteColor(FLinearColor::Red);
+                    System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
+                    mHurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
                 }
             }
         }
+    }
+
+    UFUNCTION()
+    void OnHurtColorTimeout() {
+        Sprite.SetSpriteColor(FLinearColor::White);
+        mBeHit = false;
     }
 
     void KnockBack(AActor damageCauser) {
@@ -360,6 +389,23 @@ class AAsPlayer : AAsCreature {
             direction.Normalize(0.0001);
             LaunchCharacter(FVector(direction.X * 1000, 0, 0), false, false);
         }
+    }
+
+    void CostHealth(int damage, AActor damageCauser) {
+        mCurHealth = mCurHealth - damage;
+        Gameplay::SpawnEmitterAtLocation(mBloodParticleSystem, GetActorLocation(), FRotator(Math::RandRange(-180.0, 180.0), 0, 0));
+        Gameplay::SpawnSoundAtLocation(mHurtSound, GetActorLocation());
+        if(mCurHealth > 0) {
+            Gameplay::GetPlayerCameraManager(0).StartCameraShake(mCameraShakeClass);
+            KnockBack(damageCauser);
+        }
+        else {
+            Death();
+        }
+    }
+
+    void Death() {
+        Print("ToDeath");
     }
 }
 
