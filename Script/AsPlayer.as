@@ -67,6 +67,7 @@ class AAsPlayer : AAsCreature {
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
         mCurHealth = mMaxHealth;
+        AsUtil::GetLayout().UpdateHP(this, mCurHealth);
 
         ScriptInputComponent.BindAxis(n"Move", FInputAxisHandlerDynamicSignature(this, n"MoveRight"));
         ScriptInputComponent.BindAction(n"Jump", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnJumpPressed"));
@@ -393,6 +394,7 @@ class AAsPlayer : AAsCreature {
 
     void CostHealth(int damage, AActor damageCauser) {
         mCurHealth = mCurHealth - damage;
+        AsUtil::GetLayout().UpdateHP(this, mCurHealth);
         Gameplay::SpawnEmitterAtLocation(mBloodParticleSystem, GetActorLocation(), FRotator(Math::RandRange(-180.0, 180.0), 0, 0));
         Gameplay::SpawnSoundAtLocation(mHurtSound, GetActorLocation());
         if(mCurHealth > 0) {
