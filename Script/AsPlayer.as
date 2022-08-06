@@ -31,7 +31,7 @@ class AAsPlayer : APaperCharacter {
 
     bool bCanJump = false;
 
-    bool bDead = false;
+    bool mIsDead = false;
     bool bGuarding = false;
     bool bRolling = false;
     bool bAttacking = false;
@@ -229,11 +229,11 @@ class AAsPlayer : APaperCharacter {
     void OnAttackPressed(FKey Key) {
         if(CanAttack()) {
             bAttacking = true;
-            FVector Location = GetActorLocation();
             TArray<EObjectTypeQuery> ObjectTypes;
-            FHitResult HitResult;
             ObjectTypes.Add(EObjectTypeQuery::Pawn);
+            FVector Location = GetActorLocation();
             FVector End(Location.X + Sprite.GetForwardVector().X * 160.0, Location.Y, Location.Z);
+            FHitResult HitResult;
             if(System::LineTraceSingleForObjects(Location, End, ObjectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, HitResult, true)) {
                 AAsEnemyBase enemy = Cast<AAsEnemyBase>(HitResult.Actor);
                 if(enemy != nullptr) {
@@ -311,27 +311,27 @@ class AAsPlayer : APaperCharacter {
     }
 
     bool CanJump() {
-        return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
 
     bool CanMove() {
-        return !bDead && !bGuarding && !bHit;
+        return !mIsDead && !bGuarding && !bHit;
     }
 
     bool CanSprint() {
-        return !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
     
     bool CanRoll() {
-        return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
 
     bool CanGuard() {
-        return !CharacterMovement.IsFalling() && !bDead && !bGuardCooling && !bRolling && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !bGuardCooling && !bRolling && !bHit;
     }
 
     bool CanAttack() {
-        return !CharacterMovement.IsFalling() && !bDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
     }
 }
 

@@ -7,6 +7,17 @@ class AAsEnemyBase : APaperCharacter {
     int mMaxHealth = 10;
     int mHealth = mMaxHealth;
     bool mStopMove = false;
+    bool mAttacking = false;
+    bool mRangedAttack = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    float mAttackStartDelay = 0.5;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    int mPawSensingDistance = 800;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    int mAttackDistance = 100;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
     EAsDamageType mValidDamageType = EAsDamageType::Both;
@@ -29,10 +40,15 @@ class AAsEnemyBase : APaperCharacter {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BeHit)
     UParticleSystem BeHitEffect;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Attack)
+    USoundBase mAttackSound;
+
     bool mIsTruningBack = false;
     FTimerHandle mTurnBackTimerHandle;
     FTimerHandle mHurtColorTimerHandle;
     FTimerHandle mDeathTimerHandle;
+    FTimerHandle mAttackDelayTimerHandle;
+    FTimerHandle mAttackAnimationTimerHandle;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
@@ -51,15 +67,28 @@ class AAsEnemyBase : APaperCharacter {
         if(System::IsValidTimerHandle(mDeathTimerHandle)) {
             System::ClearAndInvalidateTimerHandle(mDeathTimerHandle);
         }
+        if(System::IsValidTimerHandle(mAttackDelayTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(mAttackDelayTimerHandle);
+        }
+        if(System::IsValidTimerHandle(mAttackAnimationTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(mAttackAnimationTimerHandle);
+        }
     }
 
     UFUNCTION(BlueprintOverride)
     void Tick(float DeltaSeconds) {
         if(!mIsDead) {
             if(!mBeHit) {
-                HandleMovement();
-                ObstacleDetection();
-                CliffDetection();
+                if(PawnSensing()) {
+                    if(!System::IsValidTimerHandle(mAttackDelayTimerHandle)) {
+                        mAttackDelayTimerHandle = System::SetTimer(this, n"OnAttackDelayTimeout", mAttackStartDelay, false);
+                    }
+                }
+                else {
+                    HandleMovement();
+                    ObstacleDetection();
+                    CliffDetection();
+                }
             }
             else {
             }
@@ -196,5 +225,70 @@ class AAsEnemyBase : APaperCharacter {
             ETraceTypeQuery::Visibility, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
             TurnBack();
         }
+    }
+    
+    bool PawnSensing() {
+        TArray<EObjectTypeQuery> objectTypes;
+        objectTypes.Add(EObjectTypeQuery::Pawn);
+        FHitResult hitResult;
+        if(System::LineTraceSingleForObjects(GetActorLocation(), GetActorLocation() + FVector(GetActorForwardVector().X * mPawSensingDistance, 0, 0),
+            objectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
+            AAsPlayer player = Cast<AAsPlayer>(hitResult.Actor);
+            if(player != nullptr) {
+                if(!player.mIsDead) {
+                    if(player.GetDistanceTo(this) <= mAttackDistance) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    UFUNCTION()
+    void OnAttackDelayTimeout() {
+        System::ClearAndInvalidateTimerHandle(mAttackDelayTimerHandle);
+        DoOnceAttack();
+    }
+
+    void DoOnceAttack() {
+        if(!mAttacking) {
+            mStopMove = true;
+            mAttacking = true;
+
+            UPaperFlipbook attackAnimation = Animations[n"Attack"];
+            Sprite.SetFlipbook(attackAnimation);
+            Gameplay::SpawnSoundAtLocation(mAttackSound, GetActorLocation());
+
+            System::SetTimer(this, n"OnAttackCheck", mAttackDistance, false);
+            System::SetTimer(this, n"OnAttackAnimationTimeout", attackAnimation.TotalDuration, false);
+        }
+    }
+
+    UFUNCTION()
+    void OnAttackCheck() {
+        if(mRangedAttack) {
+        }
+        else {
+            TArray<EObjectTypeQuery> objectTypes;
+            objectTypes.Add(EObjectTypeQuery::Pawn);
+            FHitResult hitResult;
+            if(System::LineTraceSingleForObjects(GetActorLocation(), GetActorLocation() + FVector(GetActorForwardVector().X * 100, 0, 0),
+                objectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
+                AAsPlayer player = Cast<AAsPlayer>(hitResult.Actor);
+                if(player != nullptr) {
+                }
+            }
+        }
+    }
+
+    UFUNCTION()
+    void OnAttackAnimationTimeout() {
+        mStopMove = false;
+        mAttacking = false;
+        this.ResetAttack();
+    }
+
+    void ResetAttack() {
     }
 }
