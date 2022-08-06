@@ -3,7 +3,7 @@ class AAsEnemyBase : APaperCharacter {
     bool mIsRight = true;
     float mTurnBackDelayTime = 2.0;
     bool mIsDead = false;
-    bool mHit = false;
+    bool mBeHit = false;
     int mMaxHealth = 10;
     int mHealth = mMaxHealth;
     bool mStopMove = false;
@@ -37,6 +37,7 @@ class AAsEnemyBase : APaperCharacter {
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
         mHealth = mMaxHealth;
+        mIsRight = GetActorRotation().Yaw < 180;
     }
 
     UFUNCTION(BlueprintOverride)
@@ -52,11 +53,23 @@ class AAsEnemyBase : APaperCharacter {
         }
     }
 
+    UFUNCTION(BlueprintOverride)
+    void Tick(float DeltaSeconds) {
+        if(!mIsDead) {
+            if(!mBeHit) {
+                HandleMovement();
+            }
+            else {
+
+            }
+        }
+    }
+
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) {
         if(!mIsDead) {
             FaceToPlayerWhenBeHit();
             if(mValidDamageType == EAsDamageType::Both || mValidDamageType == damageType) {
-                mHit = true;
+                mBeHit = true;
                 mHealth = Math::Clamp(mHealth - damage, 0, mMaxHealth);
                 ParticleSounds(BeHitSound, 0.1, BeHitEffect, FRotator(0, 0, Math::RandRange(-180, 180)), FVector(1.0, 1.0, 1.0));
                 if(mHealth <= 0) {
@@ -81,13 +94,14 @@ class AAsEnemyBase : APaperCharacter {
             else if(damageType == EAsDamageType::Ranged) {
                 ShieldEffect.SetTemplate(RangedShieldParticleSystem);
             }
+            //mIsRight = GetActorRotation().Yaw < 180;
         }
     }
 
     UFUNCTION()
     void OnHurtColorTimeout() {
         Sprite.SetSpriteColor(FLinearColor::White);
-        mHit = false;
+        mBeHit = false;
     }
 
     private void ParticleSounds(USoundBase sound, float32 startTime, UParticleSystem particle, FRotator rotation, FVector scale) {
@@ -150,5 +164,20 @@ class AAsEnemyBase : APaperCharacter {
 
     void ExtraTriggerAfterDeath() {
 
+    }
+
+    void HandleMovement() {
+        FVector direction;
+        float length = 0;
+        CharacterMovement.Velocity.ToDirectionAndLength(direction, length);
+        if(length > 0) {
+            Sprite.SetFlipbook(Animations[n"Run"]);
+        }
+        else {
+            Sprite.SetFlipbook(Animations[n"Idle"]);
+        }
+        if(!mStopMove) {
+            AddMovementInput(FVector(mIsRight ? 1 : -1, 0, 0));
+        }
     }
 }
