@@ -8,10 +8,20 @@ class AAsEnemyBase : APaperCharacter {
     int mHealth = mMaxHealth;
     bool mStopMove = false;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
     EAsDamageType mValidDamageType = EAsDamageType::Both;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
     TMap<FName, UPaperFlipbook> Animations;
+
+    UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Shields)
+    UParticleSystemComponent ShieldEffect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Shields)
+    UParticleSystem MeleeShieldParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Shields)
+    UParticleSystem RangedShieldParticleSystem;    
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BeHit)
     USoundBase BeHitSound;
@@ -64,6 +74,12 @@ class AAsEnemyBase : APaperCharacter {
                 }
                 else {
                 }
+            }
+            else if(damageType == EAsDamageType::Melee) {
+                ShieldEffect.SetTemplate(MeleeShieldParticleSystem);
+            }
+            else if(damageType == EAsDamageType::Ranged) {
+                ShieldEffect.SetTemplate(RangedShieldParticleSystem);
             }
         }
     }
@@ -118,6 +134,7 @@ class AAsEnemyBase : APaperCharacter {
 
     void Death() {
         mIsDead = true;
+        ShieldEffect.Deactivate();
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
         UPaperFlipbook Animation = Animations[n"Death"];

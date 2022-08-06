@@ -1,5 +1,5 @@
 enum EAsDamageType {
     Both,
     Melee,
-    Range,
+    Ranged,
 }
