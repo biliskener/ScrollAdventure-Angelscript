@@ -18,6 +18,9 @@ class AAsPlayer : AAsCreature {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
     USoundCue AttackSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
+    USoundCue GuardHitSound;
+
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
 
@@ -32,10 +35,10 @@ class AAsPlayer : AAsCreature {
     bool bCanJump = false;
 
     bool mIsDead = false;
-    bool bGuarding = false;
-    bool bRolling = false;
+    bool mIsGuarding = false;
+    bool mIsRolling = false;
     bool bAttacking = false;
-    bool bHit = false;
+    bool mIsHit = false;
     bool bGuardCooling = false;
 
     bool bSprint = false;
@@ -86,7 +89,7 @@ class AAsPlayer : AAsCreature {
             if(!bAttacking) {
                 this.AddMovementInput(FVector(1.0, 0.0, 0.0), AxisValue);
                 HandleOrientation(AxisValue);
-                if(this.bRolling) {
+                if(this.mIsRolling) {
                     //this.HandleRolling();
                 }
                 else if(CharacterMovement.IsFalling()) {
@@ -144,7 +147,7 @@ class AAsPlayer : AAsCreature {
     UFUNCTION()
     void OnRollPressed(FKey Key) {
         if(CanRoll()) {
-            this.bRolling = true;
+            this.mIsRolling = true;
             LaunchCharacter(FVector(bIsRight ? 3000.0: -3000.0, 0.0, 0.0), false, false);
             this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
             this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
@@ -160,7 +163,7 @@ class AAsPlayer : AAsCreature {
     
     UFUNCTION()
     void OnRollTimeout() {
-        this.bRolling = false;
+        this.mIsRolling = false;
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
     }
@@ -173,7 +176,7 @@ class AAsPlayer : AAsCreature {
                 System::ClearAndInvalidateTimerHandle(AttackTimerHandle);
                 bAttacking = false;
             }
-            bGuarding = true;
+            mIsGuarding = true;
             UPaperFlipbook GuardAnimation = Animations[n"Guard"];
             //Sprite.SetFlipbook(GuardAnimation);
             SetAnimation(n"Guard");
@@ -194,8 +197,8 @@ class AAsPlayer : AAsCreature {
         if(System::IsValidTimerHandle(GuardLoopTimerHandle)) {
             System::ClearAndInvalidateTimerHandle(GuardLoopTimerHandle);
         }
-        if(bGuarding) {
-            bGuarding = false;
+        if(mIsGuarding) {
+            mIsGuarding = false;
             GuardEffect.Deactivate();
             bGuardCooling = true;
             GuardCoolDownTimerHandle = System::SetTimer(this, n"OnGuardCoolDownTimeout", 5.0, false);
@@ -311,27 +314,52 @@ class AAsPlayer : AAsCreature {
     }
 
     bool CanJump() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
     }
 
     bool CanMove() {
-        return !mIsDead && !bGuarding && !bHit;
+        return !mIsDead && !mIsGuarding && !mIsHit;
     }
 
     bool CanSprint() {
-        return !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
     }
     
     bool CanRoll() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
     }
 
     bool CanGuard() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !bGuardCooling && !bRolling && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !bGuardCooling && !mIsRolling && !mIsHit;
     }
 
     bool CanAttack() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !bGuarding && !bRolling && !bAttacking && !bHit;
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mIsHit;
+    }
+
+    void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
+        if(!mIsDead) {
+            if(!mIsRolling) {
+                if(mIsGuarding) {
+                    Gameplay::SpawnSoundAtLocation(GuardHitSound, GetActorLocation());
+                    KnockBack(damageCauser);
+                }
+                else {
+                    mIsHit = true;
+                    // cost hp
+                }
+            }
+        }
+    }
+
+    void KnockBack(AActor damageCauser) {
+        if(System::IsValid(damageCauser)) {
+            FVector direction;
+            float length = 0;
+            (GetActorLocation() - damageCauser.GetActorLocation()).ToDirectionAndLength(direction, length);
+            direction.Normalize(0.0001);
+            LaunchCharacter(FVector(direction.X * 1000, 0, 0), false, false);
+        }
     }
 }
 

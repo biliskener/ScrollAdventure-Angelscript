@@ -260,7 +260,7 @@ class AAsEnemyBase : AAsCreature {
             Sprite.SetFlipbook(attackAnimation);
             Gameplay::SpawnSoundAtLocation(mAttackSound, GetActorLocation());
 
-            System::SetTimer(this, n"OnAttackCheck", mAttackDistance, false);
+            System::SetTimer(this, n"OnAttackCheck", 0.1, false);
             System::SetTimer(this, n"OnAttackAnimationTimeout", attackAnimation.TotalDuration, false);
         }
     }
