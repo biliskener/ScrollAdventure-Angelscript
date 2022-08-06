@@ -1,7 +1,7 @@
 UCLASS()
 class AAsEnemyBase : APaperCharacter {
     bool mIsRight = true;
-    float mTurnBackDelayTime = 2.0;
+    float mTurnBackDelayTime = 0.5;
     bool mIsDead = false;
     bool mBeHit = false;
     int mMaxHealth = 10;
@@ -58,9 +58,10 @@ class AAsEnemyBase : APaperCharacter {
         if(!mIsDead) {
             if(!mBeHit) {
                 HandleMovement();
+                ObstacleDetection();
+                CliffDetection();
             }
             else {
-
             }
         }
     }
@@ -178,6 +179,22 @@ class AAsEnemyBase : APaperCharacter {
         }
         if(!mStopMove) {
             AddMovementInput(FVector(mIsRight ? 1 : -1, 0, 0));
+        }
+    }
+
+    void ObstacleDetection() {
+        FHitResult hitResult;
+        if(System::LineTraceSingle(GetActorLocation(), GetActorLocation() + FVector(GetActorForwardVector().X * 80, 0, 0),
+            ETraceTypeQuery::Visibility, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
+            TurnBack();
+        }
+    }
+
+    void CliffDetection() {
+        FHitResult hitResult;
+        if(!System::LineTraceSingle(GetActorLocation(), GetActorLocation() + FVector(GetActorForwardVector().X * 80, 0, -100),
+            ETraceTypeQuery::Visibility, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
+            TurnBack();
         }
     }
 }
