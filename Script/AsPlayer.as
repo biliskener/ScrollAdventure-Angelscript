@@ -1,5 +1,5 @@
 UCLASS()
-class AAsPlayer : APaperCharacter {
+class AAsPlayer : AAsCreature {
     UPROPERTY(DefaultComponent)
     UInputComponent ScriptInputComponent;
 

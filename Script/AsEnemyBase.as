@@ -1,5 +1,5 @@
 UCLASS()
-class AAsEnemyBase : APaperCharacter {
+class AAsEnemyBase : AAsCreature {
     bool mIsRight = true;
     float mTurnBackDelayTime = 0.5;
     bool mIsDead = false;
@@ -95,7 +95,7 @@ class AAsEnemyBase : APaperCharacter {
         }
     }
 
-    void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) {
+    void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
         if(!mIsDead) {
             FaceToPlayerWhenBeHit();
             if(mValidDamageType == EAsDamageType::Both || mValidDamageType == damageType) {
@@ -277,6 +277,7 @@ class AAsEnemyBase : APaperCharacter {
                 objectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
                 AAsPlayer player = Cast<AAsPlayer>(hitResult.Actor);
                 if(player != nullptr) {
+                    player.OnHitHandle(1, this, EAsDamageType::Melee);
                 }
             }
         }
