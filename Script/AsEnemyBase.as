@@ -43,6 +43,9 @@ class AAsEnemyBase : AAsCreature {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Attack)
     USoundBase mAttackSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    TSubclassOf<AAsLoot> LootClass;
+
     bool mIsTruningBack = false;
     FTimerHandle mTurnBackTimerHandle;
     FTimerHandle mHurtColorTimerHandle;
@@ -193,7 +196,9 @@ class AAsEnemyBase : AAsCreature {
     }
 
     void ExtraTriggerAfterDeath() {
-
+        if(LootClass != nullptr && Math::RandRange(0.0, 1.0) <= 0.3) {
+            SpawnActor(LootClass, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+        }
     }
 
     void HandleMovement() {
