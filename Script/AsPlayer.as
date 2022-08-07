@@ -27,6 +27,9 @@ class AAsPlayer : AAsCreature {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
     USoundBase DeathSound;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
+    USoundBase RecoverSound;
+
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
 
@@ -35,6 +38,9 @@ class AAsPlayer : AAsCreature {
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     UParticleSystem GuardOverParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+    UParticleSystem RecoverEffect;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
     TSubclassOf<AAsWave> WaveClass;
@@ -68,12 +74,15 @@ class AAsPlayer : AAsCreature {
     int mCurHealth;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    int mMaxHealth = 2;
+    int mMaxHealth = 8;
+
+    int PotionNum = 2;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
         mCurHealth = mMaxHealth;
         AsUtil::GetLayout().UpdateHP(this, mCurHealth);
+        AsUtil::GetLayout().UpdatePotionNum(PotionNum);
 
         ScriptInputComponent.BindAxis(n"Move", FInputAxisHandlerDynamicSignature(this, n"MoveRight"));
         ScriptInputComponent.BindAction(n"Jump", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnJumpPressed"));
@@ -86,6 +95,8 @@ class AAsPlayer : AAsCreature {
         ScriptInputComponent.BindAction(n"Guard", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnGuardReleased"));
         ScriptInputComponent.BindAction(n"Attack", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnAttackPressed"));
         ScriptInputComponent.BindAction(n"Attack", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnAttackReleased"));
+        ScriptInputComponent.BindAction(n"Recover", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnRecoverPressed"));
+        ScriptInputComponent.BindAction(n"Recover", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnRecoverReleased"));
     }
 
     UFUNCTION(BlueprintOverride)
@@ -283,6 +294,21 @@ class AAsPlayer : AAsCreature {
     }
 
     UFUNCTION()
+    void OnRecoverPressed(FKey Key) {
+        if(CanRecover()) {
+            PotionNum -= 1;
+            AsUtil::GetLayout().UpdatePotionNum(PotionNum);
+            CostHealth(-2, this);
+            Gameplay::SpawnSoundAtLocation(RecoverSound, GetActorLocation(), VolumeMultiplier = 1.5, StartTime = 0.7);
+            Gameplay::SpawnEmitterAtLocation(RecoverEffect, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+        }
+    }
+
+    UFUNCTION()
+    void OnRecoverReleased(FKey Key) {
+    }
+
+    UFUNCTION()
     void OnAttackTimeout() {
         bAttacking = false;
     }
@@ -364,6 +390,10 @@ class AAsPlayer : AAsCreature {
         return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
     }
 
+    bool CanRecover() {
+        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit && PotionNum > 0 && mCurHealth < mMaxHealth;
+    }
+
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
         if(!mIsDead) {
             if(!mIsRolling) {
@@ -399,7 +429,7 @@ class AAsPlayer : AAsCreature {
     }
 
     void CostHealth(int damage, AActor damageCauser) {
-        mCurHealth = mCurHealth - damage;
+        mCurHealth = Math::Clamp(mCurHealth - damage, 0, mMaxHealth);
         AsUtil::GetLayout().UpdateHP(this, mCurHealth);
         Gameplay::SpawnEmitterAtLocation(mBloodParticleSystem, GetActorLocation(), FRotator(Math::RandRange(-180.0, 180.0), 0, 0));
         Gameplay::SpawnSoundAtLocation(mHurtSound, GetActorLocation());
@@ -432,6 +462,10 @@ class AAsPlayer : AAsCreature {
     UFUNCTION()
     void OnRestartLevel() {
         Gameplay::OpenLevel(n"CombatStage");
+    }
+
+    void PickUpHeart() {
+        AsUtil::GetLayout().UpdatePotionNum(PotionNum);
     }
 }
 

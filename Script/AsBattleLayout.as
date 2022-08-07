@@ -1,7 +1,13 @@
 UCLASS()
 class AAsBattleLayout: UUserWidget {
 	UPROPERTY(BindWidget)
-    UHorizontalBox mHPRow;
+    UHorizontalBox HPRow;
+
+	UPROPERTY(BindWidget)
+    UHorizontalBox PotionRow;
+
+    UPROPERTY(BindWidget)
+    UTextBlock TXT_PotionNum;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<AAsHeart> mHeartClass;
@@ -26,7 +32,7 @@ class AAsBattleLayout: UUserWidget {
     void HealthInitialize(AAsPlayer player) {
         for(int i = 0; i < Math::Clamp((player.mMaxHealth + 1) / 2, 0, 999); ++i) {
             AAsHeart heartWidget = Cast<AAsHeart>(WidgetBlueprint::CreateWidget(mHeartClass, nullptr));
-            UHorizontalBoxSlot slot = Cast<UHorizontalBoxSlot>(mHPRow.AddChild(heartWidget));
+            UHorizontalBoxSlot slot = Cast<UHorizontalBoxSlot>(HPRow.AddChild(heartWidget));
             slot.SetPadding(FMargin(0, 0, 20, 0));
             FSlateChildSize size;
             size.Value = 1.0;
@@ -54,5 +60,9 @@ class AAsBattleLayout: UUserWidget {
                 image.SetBrush(mFullHeart);
             }
         }
+    }
+
+    void UpdatePotionNum(int curNum) {
+        TXT_PotionNum.SetText(FText::FromString(f"{curNum: 02d}"));
     }
 }
