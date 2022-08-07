@@ -9,6 +9,9 @@ class AAsBattleLayout: UUserWidget {
     UPROPERTY(BindWidget)
     UTextBlock TXT_PotionNum;
 
+    UPROPERTY(BindWidget)
+    UTextBlock TXT_KillCount;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<AAsHeart> mHeartClass;
 
@@ -62,7 +65,11 @@ class AAsBattleLayout: UUserWidget {
         }
     }
 
-    void UpdatePotionNum(int curNum) {
-        TXT_PotionNum.SetText(FText::FromString(f"{curNum: 02d}"));
+    void UpdatePotionNum(int CurNum) {
+        TXT_PotionNum.SetText(FText::FromString(f"{CurNum: 02d}"));
+    }
+
+    void UpdateKillCount(int CurCount) {
+        TXT_KillCount.SetText(FText::FromString(f"{CurCount: 02d}"));
     }
 }

@@ -10,6 +10,9 @@ class AAsEnemyBase : AAsCreature {
     bool mAttacking = false;
     bool mRangedAttack = false;
 
+    UPROPERTY(DefaultComponent, Attach = CollisionCylinder)
+    UBoxComponent CollisionBox;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
     float mAttackStartDelay = 0.5;
 
@@ -18,6 +21,9 @@ class AAsEnemyBase : AAsCreature {
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
     int mAttackDistance = 100;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    int CollisionDamage = 1;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
     EAsDamageType mValidDamageType = EAsDamageType::Both;
@@ -57,6 +63,8 @@ class AAsEnemyBase : AAsCreature {
     void BeginPlay() {
         mHealth = mMaxHealth;
         mIsRight = GetActorRotation().Yaw < 180;
+
+        CollisionBox.OnComponentBeginOverlap.AddUFunction(this, n"OnBeginOverlap");
     }
 
     UFUNCTION(BlueprintOverride)
@@ -97,6 +105,20 @@ class AAsEnemyBase : AAsCreature {
             }
         }
     }
+
+
+    UFUNCTION()
+    void OnBeginOverlap(
+        UPrimitiveComponent OverlappedComponent, AActor OtherActor,
+        UPrimitiveComponent OtherComponent, int OtherBodyIndex,
+        bool bFromSweep, const FHitResult&in Hit)
+    {
+        AAsPlayer player = Cast<AAsPlayer>(OtherActor);
+        if(player != nullptr) {
+            player.OnHitHandle(CollisionDamage, this, EAsDamageType::Both);
+        }
+    }
+
 
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
         if(!mIsDead) {
@@ -181,12 +203,16 @@ class AAsEnemyBase : AAsCreature {
 
     void Death() {
         mIsDead = true;
+
+        AsUtil::GetPlayer().AddKillCount(1);
+
         ShieldEffect.Deactivate();
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
         UPaperFlipbook Animation = Animations[n"Death"];
         Sprite.SetFlipbook(Animation);
         mDeathTimerHandle = System::SetTimer(this, n"OnDeathTimeout", Animation.TotalDuration, false);
+        SetLifeSpan(5.0);
     }
 
     UFUNCTION()

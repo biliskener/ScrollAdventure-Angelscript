@@ -8,4 +8,8 @@ namespace AsUtil {
             return nullptr;
         }
     }
+
+    AAsPlayer GetPlayer() {
+        return Cast<AAsPlayer>(Gameplay::GetPlayerCharacter(0));
+    }
 }

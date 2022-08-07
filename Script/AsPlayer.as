@@ -78,6 +78,7 @@ class AAsPlayer : AAsCreature {
     FTimerHandle mHurtColorTimerHandle;
 
     int mCurHealth;
+    int KillCount;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
     int mMaxHealth = 8;
@@ -115,6 +116,7 @@ class AAsPlayer : AAsCreature {
         mCurHealth = mMaxHealth;
         AsUtil::GetLayout().UpdateHP(this, mCurHealth);
         AsUtil::GetLayout().UpdatePotionNum(PotionNum);
+        AsUtil::GetLayout().UpdateKillCount(KillCount);
 
         ScriptInputComponent.BindAxis(n"Move", FInputAxisHandlerDynamicSignature(this, n"MoveRight"));
         ScriptInputComponent.BindAction(n"Jump", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnJumpPressed"));
@@ -492,6 +494,11 @@ class AAsPlayer : AAsCreature {
         PotionNum += 1;
         AsUtil::GetLayout().UpdatePotionNum(PotionNum);
         Gameplay::SpawnSoundAtLocation(PickUpSound, GetActorLocation(), VolumeMultiplier = 0.8);
+    }
+
+    void AddKillCount(int AddCount) {
+        KillCount += AddCount;
+        AsUtil::GetLayout().UpdateKillCount(KillCount);
     }
 }
 
