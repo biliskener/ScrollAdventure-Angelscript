@@ -3,87 +3,85 @@ class AAsPlayer : AAsCreature {
     UPROPERTY(DefaultComponent)
     UInputComponent ScriptInputComponent;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
-    TMap<FName, UPaperFlipbook> Animations;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundCue JumpSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundCue RollingSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundCue GuardSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundCue AttackSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundCue GuardHitSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundCue mHurtSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundBase DeathSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundBase RecoverSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
-    USoundBase PickUpSound;
-
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
-    UParticleSystem mBloodParticleSystem;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    int MaxHealth = 8;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
-    UParticleSystem GuardOverParticleSystem;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    TSubclassOf<UCameraShakeBase> CameraShakeClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
-    UParticleSystem RecoverEffect;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
-    UParticleSystem StartEffect;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
-    TSubclassOf<AAsWave> WaveClass;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
-    TSubclassOf<UCameraShakeBase> mCameraShakeClass;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     TSubclassOf<UUserWidget> DefeatWidgetClass;
 
-    bool bIsRight = true;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    TSubclassOf<AAsWave> WaveClass;
 
-    bool bCanJump = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Animations")
+    TMap<FName, UPaperFlipbook> Animations;
 
-    bool mIsDead = false;
-    bool mIsGuarding = false;
-    bool mIsRolling = false;
-    bool bAttacking = false;
-    bool mBeHit = false;
-    bool bGuardCooling = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundCue JumpSound;
 
-    bool bSprint = false;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundCue RollingSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundCue GuardSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundCue AttackSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundCue GuardHitSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundCue HurtSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundBase DeathSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundBase RecoverSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundBase PickUpSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem BeHitParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem GuardOverParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem RecoverParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem StartParticleSystem;
+
+    int PotionNum = 2;
+
+    int CurHealth = MaxHealth;
+    int KillCount;
+
+    bool IsCanJump = false;
+
+    bool IsRight = true;
+    bool IsDead = false;
+    bool IsRolling = false;
+    bool IsAttacking = false;
+    bool BeHit = false;
+    bool IsGuarding = false;
+    bool IsGuardCooling = false;
+    bool IsSprint = false;
 
     FTimerHandle GuardPrepareTimerHandle;
     FTimerHandle GuardLoopTimerHandle;
     FTimerHandle GuardCoolDownTimerHandle;
     FTimerHandle AttackTimerHandle;
     FTimerHandle RollTimerHandle;
-    FTimerHandle mHurtColorTimerHandle;
-
-    int mCurHealth;
-    int KillCount;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    int mMaxHealth = 8;
-
-    int PotionNum = 2;
+    FTimerHandle HurtColorTimerHandle;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
@@ -107,14 +105,14 @@ class AAsPlayer : AAsCreature {
         if(System::IsValidTimerHandle(RollTimerHandle)) {
             System::ClearAndInvalidateTimerHandle(RollTimerHandle);
         }
-        if(System::IsValidTimerHandle(mHurtColorTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
+        if(System::IsValidTimerHandle(HurtColorTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(HurtColorTimerHandle);
         }
     }
 
     void Initialize() {
-        mCurHealth = mMaxHealth;
-        AsUtil::GetBattleUI().UpdateHP(this, mCurHealth);
+        CurHealth = MaxHealth;
+        AsUtil::GetBattleUI().UpdateHP(this, CurHealth);
         AsUtil::GetBattleUI().UpdatePotionNum(PotionNum);
         AsUtil::GetBattleUI().UpdateKillCount(KillCount);
 
@@ -132,16 +130,16 @@ class AAsPlayer : AAsCreature {
         ScriptInputComponent.BindAction(n"Recover", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnRecoverPressed"));
         ScriptInputComponent.BindAction(n"Recover", EInputEvent::IE_Released, FInputActionHandlerDynamicSignature(this, n"OnRecoverReleased"));
 
-        Gameplay::SpawnEmitterAtLocation(StartEffect, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+        Gameplay::SpawnEmitterAtLocation(StartParticleSystem, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
     }
 
 	UFUNCTION()
 	void MoveRight(float32 AxisValue) {
         if(CanMove()) {
-            if(!bAttacking) {
+            if(!IsAttacking) {
                 this.AddMovementInput(FVector(1.0, 0.0, 0.0), AxisValue);
                 HandleOrientation(AxisValue);
-                if(this.mIsRolling) {
+                if(this.IsRolling) {
                     //this.HandleRolling();
                 }
                 else if(CharacterMovement.IsFalling()) {
@@ -180,8 +178,8 @@ class AAsPlayer : AAsCreature {
 
     UFUNCTION()
     void OnSprintPressed(FKey Key) {
-        if(!bSprint && CanSprint()) {
-            bSprint = true;
+        if(!IsSprint && CanSprint()) {
+            IsSprint = true;
             CharacterMovement.MaxWalkSpeed = 1000.0;
             //this.Sprite.SetPlayRate(1.5);
         }
@@ -189,8 +187,8 @@ class AAsPlayer : AAsCreature {
 
     UFUNCTION()
     void OnSprintReleased(FKey Key) {
-        if(bSprint/* && CanSprint()*/) {
-            bSprint = false;
+        if(IsSprint/* && CanSprint()*/) {
+            IsSprint = false;
             CharacterMovement.MaxWalkSpeed = 600.0;
             //this.Sprite.SetPlayRate(1.0);
         }
@@ -199,8 +197,8 @@ class AAsPlayer : AAsCreature {
     UFUNCTION()
     void OnRollPressed(FKey Key) {
         if(CanRoll()) {
-            this.mIsRolling = true;
-            LaunchCharacter(FVector(bIsRight ? 3000.0: -3000.0, 0.0, 0.0), false, false);
+            this.IsRolling = true;
+            LaunchCharacter(FVector(IsRight ? 3000.0: -3000.0, 0.0, 0.0), false, false);
             this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
             this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
             Gameplay::SpawnSoundAtLocation(RollingSound, GetActorLocation());
@@ -215,7 +213,7 @@ class AAsPlayer : AAsCreature {
     
     UFUNCTION()
     void OnRollTimeout() {
-        this.mIsRolling = false;
+        this.IsRolling = false;
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
     }
@@ -224,11 +222,11 @@ class AAsPlayer : AAsCreature {
     void OnGuardPressed(FKey Key) {
         if(CanGuard()) {
             Print("OnGuardPressed");
-            if(bAttacking) { // 最好是攻击中不能防御
+            if(IsAttacking) { // 最好是攻击中不能防御
                 System::ClearAndInvalidateTimerHandle(AttackTimerHandle);
-                bAttacking = false;
+                IsAttacking = false;
             }
-            mIsGuarding = true;
+            IsGuarding = true;
             UPaperFlipbook GuardAnimation = Animations[n"Guard"];
             //Sprite.SetFlipbook(GuardAnimation);
             SetAnimation(n"Guard");
@@ -249,10 +247,10 @@ class AAsPlayer : AAsCreature {
         if(System::IsValidTimerHandle(GuardLoopTimerHandle)) {
             System::ClearAndInvalidateTimerHandle(GuardLoopTimerHandle);
         }
-        if(mIsGuarding) {
-            mIsGuarding = false;
+        if(IsGuarding) {
+            IsGuarding = false;
             GuardEffect.Deactivate();
-            bGuardCooling = true;
+            IsGuardCooling = true;
             GuardCoolDownTimerHandle = System::SetTimer(this, n"OnGuardCoolDownTimeout", 5.0, false);
         }
     }
@@ -276,14 +274,14 @@ class AAsPlayer : AAsCreature {
     UFUNCTION()
     void OnGuardCoolDownTimeout() {
         Print("OnGuardCoolDownTimeout");
-        bGuardCooling = false;
+        IsGuardCooling = false;
         Gameplay::SpawnEmitterAtLocation(GuardOverParticleSystem, GetActorLocation(), Scale = FVector(2.0, 2.0, 2.0));
     }
 
     UFUNCTION()
     void OnAttackPressed(FKey Key) {
         if(CanAttack()) {
-            bAttacking = true;
+            IsAttacking = true;
             TArray<EObjectTypeQuery> ObjectTypes;
             ObjectTypes.Add(EObjectTypeQuery::Pawn);
             FVector Location = GetActorLocation();
@@ -295,7 +293,7 @@ class AAsPlayer : AAsCreature {
                     enemy.OnHitHandle(1, this, EAsDamageType::Melee);
                 }
             }
-            SpawnActor(WaveClass, End, FRotator(bIsRight ? 0: 180, 0, 0));
+            SpawnActor(WaveClass, End, FRotator(IsRight ? 0: 180, 0, 0));
             Gameplay::SpawnSoundAtLocation(AttackSound, GetActorLocation());
             UPaperFlipbook AttackAnimation = Animations[n"Attack"];
             HandleAttack();
@@ -320,16 +318,16 @@ class AAsPlayer : AAsCreature {
 
     UFUNCTION()
     void OnAttackTimeout() {
-        bAttacking = false;
+        IsAttacking = false;
     }
 
     void HandleOrientation(float32 AxisValue) {
         if(AxisValue > 0.0) {
-            bIsRight = true;
+            IsRight = true;
             this.Sprite.SetWorldRotation(FRotator(0.0, 0.0, 0.0));
         }
         else if(AxisValue < 0.0) {
-            bIsRight = false;
+            IsRight = false;
             this.Sprite.SetWorldRotation(FRotator(0.0, 180.0, 0.0));
         }
     }
@@ -368,7 +366,7 @@ class AAsPlayer : AAsCreature {
 
     void SetAnimation(FName AnimationName) {
         this.Sprite.SetFlipbook(Animations[AnimationName]);
-        if(AnimationName.IsEqual(n"Run") && bSprint) {
+        if(AnimationName.IsEqual(n"Run") && IsSprint) {
             this.Sprite.SetPlayRate(1.5);
         }
         else {
@@ -377,46 +375,46 @@ class AAsPlayer : AAsCreature {
     }
 
     bool CanJump() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
+        return !CharacterMovement.IsFalling() && !IsDead && !IsGuarding && !IsRolling && !IsAttacking && !BeHit;
     }
 
     bool CanMove() {
-        return !mIsDead && !mIsGuarding && !mBeHit;
+        return !IsDead && !IsGuarding && !BeHit;
     }
 
     bool CanSprint() {
-        return !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
+        return !IsDead && !IsGuarding && !IsRolling && !IsAttacking && !BeHit;
     }
     
     bool CanRoll() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
+        return !CharacterMovement.IsFalling() && !IsDead && !IsGuarding && !IsRolling && !IsAttacking && !BeHit;
     }
 
     bool CanGuard() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !bGuardCooling && !mIsRolling && !mBeHit;
+        return !CharacterMovement.IsFalling() && !IsDead && !IsGuardCooling && !IsRolling && !BeHit;
     }
 
     bool CanAttack() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit;
+        return !CharacterMovement.IsFalling() && !IsDead && !IsGuarding && !IsRolling && !IsAttacking && !BeHit;
     }
 
     bool CanRecover() {
-        return !CharacterMovement.IsFalling() && !mIsDead && !mIsGuarding && !mIsRolling && !bAttacking && !mBeHit && PotionNum > 0 && mCurHealth < mMaxHealth;
+        return !CharacterMovement.IsFalling() && !IsDead && !IsGuarding && !IsRolling && !IsAttacking && !BeHit && PotionNum > 0 && CurHealth < MaxHealth;
     }
 
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
-        if(!mIsDead) {
-            if(!mIsRolling) {
-                if(mIsGuarding) {
+        if(!IsDead) {
+            if(!IsRolling) {
+                if(IsGuarding) {
                     Gameplay::SpawnSoundAtLocation(GuardHitSound, GetActorLocation());
                     KnockBack(damageCauser);
                 }
                 else {
-                    mBeHit = true;
+                    BeHit = true;
                     CostHealth(damage, damageCauser);
                     Sprite.SetSpriteColor(FLinearColor::Red);
-                    System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
-                    mHurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
+                    System::ClearAndInvalidateTimerHandle(HurtColorTimerHandle);
+                    HurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
                 }
             }
         }
@@ -425,7 +423,7 @@ class AAsPlayer : AAsCreature {
     UFUNCTION()
     void OnHurtColorTimeout() {
         Sprite.SetSpriteColor(FLinearColor::White);
-        mBeHit = false;
+        BeHit = false;
     }
 
     void KnockBack(AActor damageCauser) {
@@ -439,14 +437,14 @@ class AAsPlayer : AAsCreature {
     }
 
     void CostHealth(int damage, AActor damageCauser) {
-        mCurHealth = Math::Clamp(mCurHealth - damage, 0, mMaxHealth);
-        AsUtil::GetBattleUI().UpdateHP(this, mCurHealth);
+        CurHealth = Math::Clamp(CurHealth - damage, 0, MaxHealth);
+        AsUtil::GetBattleUI().UpdateHP(this, CurHealth);
         if(damage > 0) {
-            Gameplay::SpawnEmitterAtLocation(mBloodParticleSystem, GetActorLocation(), FRotator(Math::RandRange(-180.0, 180.0), 0, 0));
-            Gameplay::SpawnSoundAtLocation(mHurtSound, GetActorLocation());
+            Gameplay::SpawnEmitterAtLocation(BeHitParticleSystem, GetActorLocation(), FRotator(Math::RandRange(-180.0, 180.0), 0, 0));
+            Gameplay::SpawnSoundAtLocation(HurtSound, GetActorLocation());
         }
-        if(mCurHealth > 0) {
-            Gameplay::GetPlayerCameraManager(0).StartCameraShake(mCameraShakeClass);
+        if(CurHealth > 0) {
+            Gameplay::GetPlayerCameraManager(0).StartCameraShake(CameraShakeClass);
             KnockBack(damageCauser);
         }
         else {
@@ -455,7 +453,7 @@ class AAsPlayer : AAsCreature {
     }
 
     void Death() {
-        mIsDead = true;
+        IsDead = true;
         Gameplay::SpawnSoundAtLocation(DeathSound, GetActorLocation(), VolumeMultiplier = 3.0, StartTime = 0.5);
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
         this.CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
@@ -479,7 +477,7 @@ class AAsPlayer : AAsCreature {
     void PickUpHeart() {
         CostHealth(-2, this);
         Gameplay::SpawnSoundAtLocation(RecoverSound, GetActorLocation(), VolumeMultiplier = 1.5, StartTime = 0.7);
-        Gameplay::SpawnEmitterAtLocation(RecoverEffect, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+        Gameplay::SpawnEmitterAtLocation(RecoverParticleSystem, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
     }
 
     void UsePotion() {
@@ -487,7 +485,7 @@ class AAsPlayer : AAsCreature {
         AsUtil::GetBattleUI().UpdatePotionNum(PotionNum);
         CostHealth(-2, this);
         Gameplay::SpawnSoundAtLocation(RecoverSound, GetActorLocation(), VolumeMultiplier = 1.5, StartTime = 0.7);
-        Gameplay::SpawnEmitterAtLocation(RecoverEffect, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+        Gameplay::SpawnEmitterAtLocation(RecoverParticleSystem, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
     }
 
     void PickUpPotion() {

@@ -33,7 +33,7 @@ class UAsBattleUI: UUserWidget {
     }
 
     void HealthInitialize(AAsPlayer player) {
-        for(int i = 0; i < Math::Clamp((player.mMaxHealth + 1) / 2, 0, 999); ++i) {
+        for(int i = 0; i < Math::Clamp((player.MaxHealth + 1) / 2, 0, 999); ++i) {
             UAsHeartWidget heartWidget = Cast<UAsHeartWidget>(WidgetBlueprint::CreateWidget(HeartWidgetClass, nullptr));
             UHorizontalBoxSlot slot = Cast<UHorizontalBoxSlot>(HealthRow.AddChild(heartWidget));
             slot.SetPadding(FMargin(0, 0, 20, 0));
@@ -46,11 +46,11 @@ class UAsBattleUI: UUserWidget {
             HeartImageArray.AddUnique(heartWidget.HeartImage);
         }
 
-        UpdateHP(player, player.mCurHealth);
+        UpdateHP(player, player.CurHealth);
     }
 
     void UpdateHP(AAsPlayer player, int currentHP) {
-        int clampedHp = Math::Clamp(currentHP, 0, player.mMaxHealth);
+        int clampedHp = Math::Clamp(currentHP, 0, player.MaxHealth);
         for(int i = 0; i < HeartImageArray.Num(); ++i) {
             UImage image = HeartImageArray[i];
             if(clampedHp <= i * 2) {

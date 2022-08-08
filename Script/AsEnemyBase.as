@@ -51,10 +51,11 @@ class AAsEnemyBase : AAsCreature {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
     USoundBase BeHitSound;
 
+    int CurHealth = MaxHealth;
+    
     bool IsRight = true;
     bool IsDead = false;
     bool BeHit = false;
-    int CurHealth = MaxHealth;
     bool IsStopMove = false;
     bool IsAttacking = false;
     bool IsTruningBack = false;
@@ -272,7 +273,7 @@ class AAsEnemyBase : AAsCreature {
             objectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
             AAsPlayer player = Cast<AAsPlayer>(hitResult.Actor);
             if(player != nullptr) {
-                if(!player.mIsDead) {
+                if(!player.IsDead) {
                     if(player.GetDistanceTo(this) <= AttackDistance) {
                         return true;
                     }
