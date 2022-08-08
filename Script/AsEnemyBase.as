@@ -1,98 +1,104 @@
 UCLASS()
 class AAsEnemyBase : AAsCreature {
-    bool mIsRight = true;
-    float mTurnBackDelayTime = 0.5;
-    bool mIsDead = false;
-    bool mBeHit = false;
-    int mMaxHealth = 10;
-    int mHealth = mMaxHealth;
-    bool mStopMove = false;
-    bool mAttacking = false;
-    bool mRangedAttack = false;
-
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder)
     UBoxComponent CollisionBox;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    float mAttackStartDelay = 0.5;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    int mPawSensingDistance = 800;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    int mAttackDistance = 100;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    int CollisionDamage = 1;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
-    EAsDamageType mValidDamageType = EAsDamageType::Both;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
-    TMap<FName, UPaperFlipbook> Animations;
-
-    UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Shields)
+    UPROPERTY(DefaultComponent, Attach = CollisionCylinder)
     UParticleSystemComponent ShieldEffect;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Shields)
-    UParticleSystem MeleeShieldParticleSystem;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    int MaxHealth = 10;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Shields)
-    UParticleSystem RangedShieldParticleSystem;    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    int SensingDistance = 800;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BeHit)
-    USoundBase BeHitSound;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    float TurnBackDelayTime = 0.5;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = BeHit)
-    UParticleSystem BeHitEffect;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    bool RangedAttack = false;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Attack)
-    USoundBase mAttackSound;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    float AttackStartDelay = 0.5;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    int AttackDistance = 100;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    int CollisionDamage = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    EAsDamageType ValidDamageType = EAsDamageType::Both;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     TSubclassOf<AAsLoot> LootClass;
 
-    bool mIsTruningBack = false;
-    FTimerHandle mTurnBackTimerHandle;
-    FTimerHandle mHurtColorTimerHandle;
-    FTimerHandle mDeathTimerHandle;
-    FTimerHandle mAttackDelayTimerHandle;
-    FTimerHandle mAttackAnimationTimerHandle;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Animations")
+    TMap<FName, UPaperFlipbook> Animations;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem MeleeShieldParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem RangedShieldParticleSystem;    
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Effects")
+    UParticleSystem BeHitParticleSystem;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundBase AttackSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundBase BeHitSound;
+
+    bool IsRight = true;
+    bool IsDead = false;
+    bool BeHit = false;
+    int CurHealth = MaxHealth;
+    bool IsStopMove = false;
+    bool IsAttacking = false;
+    bool IsTruningBack = false;
+    
+    FTimerHandle TurnBackTimerHandle;
+    FTimerHandle HurtColorTimerHandle;
+    FTimerHandle DeathTimerHandle;
+    FTimerHandle AttackDelayTimerHandle;
+    FTimerHandle AttackAnimationTimerHandle;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
-        mHealth = mMaxHealth;
-        mIsRight = GetActorRotation().Yaw < 180;
+        CurHealth = MaxHealth;
+        IsRight = GetActorRotation().Yaw < 180;
 
         CollisionBox.OnComponentBeginOverlap.AddUFunction(this, n"OnBeginOverlap");
     }
 
     UFUNCTION(BlueprintOverride)
     void EndPlay(EEndPlayReason EndPlayReason) {
-        if(System::IsValidTimerHandle(mTurnBackTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(mTurnBackTimerHandle);
+        if(System::IsValidTimerHandle(TurnBackTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(TurnBackTimerHandle);
         }
-        if(System::IsValidTimerHandle(mHurtColorTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
+        if(System::IsValidTimerHandle(HurtColorTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(HurtColorTimerHandle);
         }
-        if(System::IsValidTimerHandle(mDeathTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(mDeathTimerHandle);
+        if(System::IsValidTimerHandle(DeathTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(DeathTimerHandle);
         }
-        if(System::IsValidTimerHandle(mAttackDelayTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(mAttackDelayTimerHandle);
+        if(System::IsValidTimerHandle(AttackDelayTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(AttackDelayTimerHandle);
         }
-        if(System::IsValidTimerHandle(mAttackAnimationTimerHandle)) {
-            System::ClearAndInvalidateTimerHandle(mAttackAnimationTimerHandle);
+        if(System::IsValidTimerHandle(AttackAnimationTimerHandle)) {
+            System::ClearAndInvalidateTimerHandle(AttackAnimationTimerHandle);
         }
     }
 
     UFUNCTION(BlueprintOverride)
     void Tick(float DeltaSeconds) {
-        if(!mIsDead) {
-            if(!mBeHit) {
+        if(!IsDead) {
+            if(!BeHit) {
                 if(PawnSensing()) {
-                    if(!System::IsValidTimerHandle(mAttackDelayTimerHandle)) {
-                        mAttackDelayTimerHandle = System::SetTimer(this, n"OnAttackDelayTimeout", mAttackStartDelay, false);
+                    if(!System::IsValidTimerHandle(AttackDelayTimerHandle)) {
+                        AttackDelayTimerHandle = System::SetTimer(this, n"OnAttackDelayTimeout", AttackStartDelay, false);
                     }
                 }
                 else {
@@ -121,13 +127,13 @@ class AAsEnemyBase : AAsCreature {
 
 
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
-        if(!mIsDead) {
+        if(!IsDead) {
             FaceToPlayerWhenBeHit();
-            if(mValidDamageType == EAsDamageType::Both || mValidDamageType == damageType) {
-                mBeHit = true;
-                mHealth = Math::Clamp(mHealth - damage, 0, mMaxHealth);
-                ParticleSounds(BeHitSound, 0.1, BeHitEffect, FRotator(0, 0, Math::RandRange(-180, 180)), FVector(1.0, 1.0, 1.0));
-                if(mHealth <= 0) {
+            if(ValidDamageType == EAsDamageType::Both || ValidDamageType == damageType) {
+                BeHit = true;
+                CurHealth = Math::Clamp(CurHealth - damage, 0, MaxHealth);
+                ParticleSounds(BeHitSound, 0.1, BeHitParticleSystem, FRotator(0, 0, Math::RandRange(-180, 180)), FVector(1.0, 1.0, 1.0));
+                if(CurHealth <= 0) {
                     Death();
                 }
                 else if(damageType == EAsDamageType::Melee) {
@@ -137,8 +143,8 @@ class AAsEnemyBase : AAsCreature {
                     direction.Normalize(0.0001);
                     LaunchCharacter(FVector(direction.X * 1000, 0, 0), true, true);
                     Sprite.SetSpriteColor(FLinearColor::Red);
-                    System::ClearAndInvalidateTimerHandle(mHurtColorTimerHandle);
-                    mHurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
+                    System::ClearAndInvalidateTimerHandle(HurtColorTimerHandle);
+                    HurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
                 }
                 else {
                 }
@@ -156,7 +162,7 @@ class AAsEnemyBase : AAsCreature {
     UFUNCTION()
     void OnHurtColorTimeout() {
         Sprite.SetSpriteColor(FLinearColor::White);
-        mBeHit = false;
+        BeHit = false;
     }
 
     private void ParticleSounds(USoundBase sound, float32 startTime, UParticleSystem particle, FRotator rotation, FVector scale) {
@@ -169,14 +175,14 @@ class AAsEnemyBase : AAsCreature {
             FVector playerPos = Gameplay::GetPlayerCharacter(0).GetActorLocation();
             FVector selfPos = GetActorLocation();
             if(selfPos.X > playerPos.X) {
-                if(mIsRight) {
-                    this.mTurnBackDelayTime = 0.2;
+                if(IsRight) {
+                    this.TurnBackDelayTime = 0.2;
                     TurnBack();
                 }
             }
             else if(selfPos.X < playerPos.X) {
-                if(!mIsRight) {
-                    this.mTurnBackDelayTime = 0.2;
+                if(!IsRight) {
+                    this.TurnBackDelayTime = 0.2;
                     TurnBack();
                 }
             }
@@ -184,25 +190,25 @@ class AAsEnemyBase : AAsCreature {
     }
 
     private void TurnBack() {
-        if(!mIsTruningBack) {
-            mIsTruningBack = true;
-            mStopMove = true;
-            mTurnBackTimerHandle = System::SetTimer(this, n"OnTurnBackTimeout", mTurnBackDelayTime, false);
+        if(!IsTruningBack) {
+            IsTruningBack = true;
+            IsStopMove = true;
+            TurnBackTimerHandle = System::SetTimer(this, n"OnTurnBackTimeout", TurnBackDelayTime, false);
         }
     }
 
     UFUNCTION()
     void OnTurnBackTimeout() {
-        if(!mIsDead) {
-            mStopMove = false;
-            mIsRight = !mIsRight;
-            SetActorRotation(FRotator(0.0, mIsRight ? 0.0 : 180.0, 0.0));
+        if(!IsDead) {
+            IsStopMove = false;
+            IsRight = !IsRight;
+            SetActorRotation(FRotator(0.0, IsRight ? 0.0 : 180.0, 0.0));
         }
-        mIsTruningBack = false;
+        IsTruningBack = false;
     }
 
     void Death() {
-        mIsDead = true;
+        IsDead = true;
 
         AsUtil::GetPlayer().AddKillCount(1);
 
@@ -211,7 +217,7 @@ class AAsEnemyBase : AAsCreature {
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
         UPaperFlipbook Animation = Animations[n"Death"];
         Sprite.SetFlipbook(Animation);
-        mDeathTimerHandle = System::SetTimer(this, n"OnDeathTimeout", Animation.TotalDuration, false);
+        DeathTimerHandle = System::SetTimer(this, n"OnDeathTimeout", Animation.TotalDuration, false);
         SetLifeSpan(5.0);
     }
 
@@ -237,8 +243,8 @@ class AAsEnemyBase : AAsCreature {
         else {
             Sprite.SetFlipbook(Animations[n"Idle"]);
         }
-        if(!mStopMove) {
-            AddMovementInput(FVector(mIsRight ? 1 : -1, 0, 0));
+        if(!IsStopMove) {
+            AddMovementInput(FVector(IsRight ? 1 : -1, 0, 0));
         }
     }
 
@@ -262,12 +268,12 @@ class AAsEnemyBase : AAsCreature {
         TArray<EObjectTypeQuery> objectTypes;
         objectTypes.Add(EObjectTypeQuery::Pawn);
         FHitResult hitResult;
-        if(System::LineTraceSingleForObjects(GetActorLocation(), GetActorLocation() + FVector(GetActorForwardVector().X * mPawSensingDistance, 0, 0),
+        if(System::LineTraceSingleForObjects(GetActorLocation(), GetActorLocation() + FVector(GetActorForwardVector().X * SensingDistance, 0, 0),
             objectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
             AAsPlayer player = Cast<AAsPlayer>(hitResult.Actor);
             if(player != nullptr) {
                 if(!player.mIsDead) {
-                    if(player.GetDistanceTo(this) <= mAttackDistance) {
+                    if(player.GetDistanceTo(this) <= AttackDistance) {
                         return true;
                     }
                 }
@@ -278,18 +284,18 @@ class AAsEnemyBase : AAsCreature {
 
     UFUNCTION()
     void OnAttackDelayTimeout() {
-        System::ClearAndInvalidateTimerHandle(mAttackDelayTimerHandle);
+        System::ClearAndInvalidateTimerHandle(AttackDelayTimerHandle);
         DoOnceAttack();
     }
 
     void DoOnceAttack() {
-        if(!mAttacking) {
-            mStopMove = true;
-            mAttacking = true;
+        if(!IsAttacking) {
+            IsStopMove = true;
+            IsAttacking = true;
 
             UPaperFlipbook attackAnimation = Animations[n"Attack"];
             Sprite.SetFlipbook(attackAnimation);
-            Gameplay::SpawnSoundAtLocation(mAttackSound, GetActorLocation());
+            Gameplay::SpawnSoundAtLocation(AttackSound, GetActorLocation());
 
             System::SetTimer(this, n"OnAttackCheck", 0.1, false);
             System::SetTimer(this, n"OnAttackAnimationTimeout", attackAnimation.TotalDuration, false);
@@ -298,7 +304,7 @@ class AAsEnemyBase : AAsCreature {
 
     UFUNCTION()
     void OnAttackCheck() {
-        if(mRangedAttack) {
+        if(RangedAttack) {
         }
         else {
             TArray<EObjectTypeQuery> objectTypes;
@@ -316,8 +322,8 @@ class AAsEnemyBase : AAsCreature {
 
     UFUNCTION()
     void OnAttackAnimationTimeout() {
-        mStopMove = false;
-        mAttacking = false;
+        IsStopMove = false;
+        IsAttacking = false;
         this.ResetAttack();
     }
 
