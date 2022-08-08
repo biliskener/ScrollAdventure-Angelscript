@@ -1,13 +1,13 @@
 UCLASS()
 class AAsHudInGame: AHUD {
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSubclassOf<AAsBattleLayout> mLayoutClass;
+    TSubclassOf<UAsBattleUI> mLayoutClass;
 
-    AAsBattleLayout mLayout;
+    UAsBattleUI mLayout;
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay() {
-        mLayout = Cast<AAsBattleLayout>(WidgetBlueprint::CreateWidget(mLayoutClass, nullptr));
+        mLayout = Cast<UAsBattleUI>(WidgetBlueprint::CreateWidget(mLayoutClass, nullptr));
         mLayout.AddToViewport();
     }
 }
