@@ -1,12 +1,12 @@
 UCLASS()
-class AAsLevel: ALevelScriptActor {
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Actors)
+class AAsBattleLevel: ALevelScriptActor {
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     ACameraActor CameraActor;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Actors)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     APaperSpriteActor BackgroundActor;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Actors)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     APaperTileMapActor TileMapActor;
 
     UPaperTileMapComponent TileMapComponent;
