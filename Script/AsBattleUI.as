@@ -13,7 +13,7 @@ class UAsBattleUI: UUserWidget {
     UTextBlock KillCountTextBlock;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
-    TSubclassOf<AAsHeart> HeartClass;
+    TSubclassOf<UAsHeartWidget> HeartWidgetClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     FSlateBrush FullHeartImage;
@@ -34,16 +34,16 @@ class UAsBattleUI: UUserWidget {
 
     void HealthInitialize(AAsPlayer player) {
         for(int i = 0; i < Math::Clamp((player.mMaxHealth + 1) / 2, 0, 999); ++i) {
-            AAsHeart heartWidget = Cast<AAsHeart>(WidgetBlueprint::CreateWidget(HeartClass, nullptr));
+            UAsHeartWidget heartWidget = Cast<UAsHeartWidget>(WidgetBlueprint::CreateWidget(HeartWidgetClass, nullptr));
             UHorizontalBoxSlot slot = Cast<UHorizontalBoxSlot>(HealthRow.AddChild(heartWidget));
             slot.SetPadding(FMargin(0, 0, 20, 0));
             FSlateChildSize size;
             size.Value = 1.0;
             size.SizeRule = ESlateSizeRule::Automatic;
             slot.SetSize(size);
-            heartWidget.mHPSprite.SetDesiredSizeOverride(FVector2D(40, 40));
+            heartWidget.HeartImage.SetDesiredSizeOverride(FVector2D(40, 40));
 
-            HeartImageArray.AddUnique(heartWidget.mHPSprite);
+            HeartImageArray.AddUnique(heartWidget.HeartImage);
         }
 
         UpdateHP(player, player.mCurHealth);
