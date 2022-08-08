@@ -1,8 +1,8 @@
 namespace AsUtil {
-    UAsBattleUI GetLayout() {
-        AAsHudInGame hud = Cast<AAsHudInGame>(Gameplay::GetPlayerController(0).GetHUD());
+    UAsBattleUI GetBattleUI() {
+        AAsHUDInGame hud = Cast<AAsHUDInGame>(Gameplay::GetPlayerController(0).GetHUD());
         if(hud != nullptr) {
-            return hud.mLayout;
+            return hud.BattleUI;
         }
         else {
             return nullptr;

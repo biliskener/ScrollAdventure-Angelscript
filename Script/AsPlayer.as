@@ -114,9 +114,9 @@ class AAsPlayer : AAsCreature {
 
     void Initialize() {
         mCurHealth = mMaxHealth;
-        AsUtil::GetLayout().UpdateHP(this, mCurHealth);
-        AsUtil::GetLayout().UpdatePotionNum(PotionNum);
-        AsUtil::GetLayout().UpdateKillCount(KillCount);
+        AsUtil::GetBattleUI().UpdateHP(this, mCurHealth);
+        AsUtil::GetBattleUI().UpdatePotionNum(PotionNum);
+        AsUtil::GetBattleUI().UpdateKillCount(KillCount);
 
         ScriptInputComponent.BindAxis(n"Move", FInputAxisHandlerDynamicSignature(this, n"MoveRight"));
         ScriptInputComponent.BindAction(n"Jump", EInputEvent::IE_Pressed, FInputActionHandlerDynamicSignature(this, n"OnJumpPressed"));
@@ -440,7 +440,7 @@ class AAsPlayer : AAsCreature {
 
     void CostHealth(int damage, AActor damageCauser) {
         mCurHealth = Math::Clamp(mCurHealth - damage, 0, mMaxHealth);
-        AsUtil::GetLayout().UpdateHP(this, mCurHealth);
+        AsUtil::GetBattleUI().UpdateHP(this, mCurHealth);
         if(damage > 0) {
             Gameplay::SpawnEmitterAtLocation(mBloodParticleSystem, GetActorLocation(), FRotator(Math::RandRange(-180.0, 180.0), 0, 0));
             Gameplay::SpawnSoundAtLocation(mHurtSound, GetActorLocation());
@@ -484,7 +484,7 @@ class AAsPlayer : AAsCreature {
 
     void UsePotion() {
         PotionNum -= 1;
-        AsUtil::GetLayout().UpdatePotionNum(PotionNum);
+        AsUtil::GetBattleUI().UpdatePotionNum(PotionNum);
         CostHealth(-2, this);
         Gameplay::SpawnSoundAtLocation(RecoverSound, GetActorLocation(), VolumeMultiplier = 1.5, StartTime = 0.7);
         Gameplay::SpawnEmitterAtLocation(RecoverEffect, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
@@ -492,13 +492,13 @@ class AAsPlayer : AAsCreature {
 
     void PickUpPotion() {
         PotionNum += 1;
-        AsUtil::GetLayout().UpdatePotionNum(PotionNum);
+        AsUtil::GetBattleUI().UpdatePotionNum(PotionNum);
         Gameplay::SpawnSoundAtLocation(PickUpSound, GetActorLocation(), VolumeMultiplier = 0.8);
     }
 
     void AddKillCount(int AddCount) {
         KillCount += AddCount;
-        AsUtil::GetLayout().UpdateKillCount(KillCount);
+        AsUtil::GetBattleUI().UpdateKillCount(KillCount);
     }
 }
 
