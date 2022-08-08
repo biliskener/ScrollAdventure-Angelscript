@@ -1,4 +1,0 @@
-UCLASS()
-class AAsDefeat: UUserWidget {
-
-}
