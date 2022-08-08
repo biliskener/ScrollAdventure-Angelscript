@@ -12,10 +12,10 @@ class AAsWave: AActor {
     UPROPERTY(DefaultComponent)
     UProjectileMovementComponent ProjectileMovement;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Sounds)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     USoundCue HitWallSound;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effects)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     UParticleSystem HitWallEffect;
 
     float Duration = 0;

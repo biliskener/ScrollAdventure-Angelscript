@@ -14,10 +14,10 @@ class AAsLoot: AActor {
     UPROPERTY(DefaultComponent, Attach = RootSceneComponent)
     UParticleSystemComponent ParticleSystem;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     UPaperSprite HeartSprite;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     UPaperSprite PotionSprite;
 
     bool IsHeart = false;
