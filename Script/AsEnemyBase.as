@@ -75,6 +75,7 @@ class AAsEnemyBase : AAsCreature {
     bool IsAttacking = false;
     bool IsTruningBack = false;
     bool IsPatrolAttacking = false;
+    bool IsPatrolAttackCooling = false;
     
     FTimerHandle TurnBackTimerHandle;
     FTimerHandle HurtColorTimerHandle;
@@ -210,9 +211,11 @@ class AAsEnemyBase : AAsCreature {
         if(!IsTruningBack) {
             IsTruningBack = true;
             IsStopMove = true;
-            if(!IsPatrolAttacking) {
-                IsPatrolAttacking = true;
-                PatrolAttack();
+            if(!IsPatrolAttackCooling) {
+                if(!IsPatrolAttacking) {
+                    IsPatrolAttacking = true;
+                    PatrolAttack();
+                }
             }
             TurnBackTimerHandle = System::SetTimer(this, n"OnTurnBackTimeout", TurnBackDelayTime, false);
         }
@@ -367,12 +370,18 @@ class AAsEnemyBase : AAsCreature {
                 SpawnActor(PatrolWeaponClass, GetActorLocation(), FRotator(50 + 40 * i, 0, 0));
                 Gameplay::SpawnSoundAtLocation(PatrolAttackSound, GetActorLocation(), VolumeMultiplier = 2.0, StartTime = 1.0);
             }
+            IsPatrolAttackCooling = true;
+            System::SetTimer(this, n"OnPatrolAttackTimeout", 5.0, false);
         }
+    }
+
+    UFUNCTION()
+    void OnPatrolAttackTimeout() {
+        IsPatrolAttackCooling = false;
     }
 
     void ResetPatrolAttack() {
         if(!IsWolf) {
-
         }
     }
 }

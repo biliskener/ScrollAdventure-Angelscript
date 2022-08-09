@@ -9,6 +9,9 @@ class AAsBattleLevel: ALevelScriptActor {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     APaperTileMapActor TileMapActor;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    ATriggerBox DeathLine;
+
     UPaperTileMapComponent TileMapComponent;
     UPaperTileLayer TileLayer;
 
@@ -37,6 +40,8 @@ class AAsBattleLevel: ALevelScriptActor {
         CameraInitLocation = CameraActor.GetActorLocation();
         FVector BackgroundLocation = BackgroundActor.GetActorLocation();
         CameraInitOffset = BackgroundLocation - CameraInitLocation;
+
+        DeathLine.OnActorBeginOverlap.AddUFunction(this, n"OnBeginOverlap");
     }
 
     UFUNCTION(BlueprintOverride)
@@ -46,6 +51,17 @@ class AAsBattleLevel: ALevelScriptActor {
             CameraActor.SetActorLocation(FVector(PlayerLocation.X, CameraInitLocation.Y, CameraInitLocation.Z));
             FVector BackgroundLocation = BackgroundActor.GetActorLocation();
             BackgroundActor.SetActorLocation(FVector(CameraActor.GetActorLocation().X + CameraInitOffset.X, BackgroundLocation.Y, BackgroundLocation.Z));
+        }
+    }
+
+    UFUNCTION()
+    void OnBeginOverlap(AActor OverlappedActor, AActor OtherActor) {
+        AAsCreature creature = Cast<AAsCreature>(OtherActor);
+        if(creature != nullptr) {
+            creature.OnHitHandle(999, this, EAsDamageType::Both);
+        }
+        else {
+            OtherActor.DestroyActor();
         }
     }
 }
