@@ -7,6 +7,9 @@ class AAsEnemyBase : AAsCreature {
     UParticleSystemComponent ShieldEffect;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    bool IsWolf = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     int MaxHealth = 10;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
@@ -37,6 +40,9 @@ class AAsEnemyBase : AAsCreature {
     TSubclassOf<AAsWave> RangeWeaponClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    TSubclassOf<AAsWave> PatrolWeaponClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     TSubclassOf<AAsLoot> LootClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Animations")
@@ -55,6 +61,9 @@ class AAsEnemyBase : AAsCreature {
     USoundBase AttackSound;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
+    USoundBase PatrolAttackSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Sounds")
     USoundBase BeHitSound;
 
     int CurHealth = MaxHealth;
@@ -65,6 +74,7 @@ class AAsEnemyBase : AAsCreature {
     bool IsStopMove = false;
     bool IsAttacking = false;
     bool IsTruningBack = false;
+    bool IsPatrolAttacking = false;
     
     FTimerHandle TurnBackTimerHandle;
     FTimerHandle HurtColorTimerHandle;
@@ -200,6 +210,10 @@ class AAsEnemyBase : AAsCreature {
         if(!IsTruningBack) {
             IsTruningBack = true;
             IsStopMove = true;
+            if(!IsPatrolAttacking) {
+                IsPatrolAttacking = true;
+                PatrolAttack();
+            }
             TurnBackTimerHandle = System::SetTimer(this, n"OnTurnBackTimeout", TurnBackDelayTime, false);
         }
     }
@@ -210,6 +224,10 @@ class AAsEnemyBase : AAsCreature {
             IsStopMove = false;
             IsRight = !IsRight;
             SetActorRotation(FRotator(0.0, IsRight ? 0.0 : 180.0, 0.0));
+            if(IsPatrolAttacking) {
+                IsPatrolAttacking = false;
+                ResetPatrolAttack();
+            }
         }
         IsTruningBack = false;
     }
@@ -341,5 +359,20 @@ class AAsEnemyBase : AAsCreature {
     }
 
     void ResetAttack() {
+    }
+
+    void PatrolAttack() {
+        if(!IsWolf) {
+            for(int i = 0; i <= 2; ++i) {
+                SpawnActor(PatrolWeaponClass, GetActorLocation(), FRotator(50 + 40 * i, 0, 0));
+                Gameplay::SpawnSoundAtLocation(PatrolAttackSound, GetActorLocation(), VolumeMultiplier = 2.0, StartTime = 1.0);
+            }
+        }
+    }
+
+    void ResetPatrolAttack() {
+        if(!IsWolf) {
+
+        }
     }
 }
