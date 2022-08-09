@@ -13,6 +13,9 @@ class AAsWave: AActor {
     UProjectileMovementComponent ProjectileMovement;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    bool IsWave = true;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     USoundCue HitWallSound;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
@@ -28,10 +31,17 @@ class AAsWave: AActor {
     UFUNCTION(BlueprintOverride)
     void Tick(float DeltaSeconds) {
         Duration += DeltaSeconds;
-        float Scale = Math::Lerp(5, 1, Math::Min(1.0, Duration / 0.5));
-        this.RootSceneComponent.RelativeScale3D = FVector(Scale, Scale, Scale);
-        if(Duration >= 0.5) {
-            DestroyActor();
+        if(IsWave) {
+            float Scale = Math::Lerp(5, 1, Math::Min(1.0, Duration / 0.5));
+            this.RootSceneComponent.RelativeScale3D = FVector(Scale, Scale, Scale);
+            if(Duration >= 0.5) {
+                DestroyActor();
+            }
+        }
+        else {
+            float Scale = Math::Lerp(1, 2, Math::Min(1.0, Duration / 1.0));
+            this.RootSceneComponent.RelativeScale3D = FVector(Scale, Scale, Scale);
+            this.RootSceneComponent.AddLocalRotation(FRotator(900.0 * DeltaSeconds, 0, 0)); 
         }
     }
 
@@ -41,12 +51,23 @@ class AAsWave: AActor {
         UPrimitiveComponent OtherComponent, int OtherBodyIndex,
         bool bFromSweep, const FHitResult&in Hit)
     {
-        AAsEnemyBase enemy = Cast<AAsEnemyBase>(OtherActor);
-        if(enemy != nullptr) {
-            Gameplay::SpawnEmitterAtLocation(HitWallEffect, GetActorLocation(), Scale = FVector(2.0, 2.0, 2.0));
-            enemy.OnHitHandle(1, this, EAsDamageType::Ranged);
-            DestroyActor();
-            return;
+        if(IsWave) {
+            AAsEnemyBase enemy = Cast<AAsEnemyBase>(OtherActor);
+            if(enemy != nullptr) {
+                Gameplay::SpawnEmitterAtLocation(HitWallEffect, GetActorLocation(), Scale = FVector(2.0, 2.0, 2.0));
+                enemy.OnHitHandle(1, this, EAsDamageType::Ranged);
+                DestroyActor();
+                return;
+            }
+        }
+        else {
+            AAsPlayer player = Cast<AAsPlayer>(OtherActor);
+            if(player != nullptr) {
+                Gameplay::SpawnEmitterAtLocation(HitWallEffect, GetActorLocation(), Scale = FVector(2.0, 2.0, 2.0));
+                player.OnHitHandle(1, this, EAsDamageType::Ranged);
+                DestroyActor();
+                return;
+            }
         }
 
         APaperTileMapActor tileMapActor = Cast<APaperTileMapActor>(OtherActor);

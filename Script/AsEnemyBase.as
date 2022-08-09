@@ -28,7 +28,13 @@ class AAsEnemyBase : AAsCreature {
     int CollisionDamage = 1;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    int Damage = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     EAsDamageType ValidDamageType = EAsDamageType::Both;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
+    TSubclassOf<AAsWave> RangeWeaponClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     TSubclassOf<AAsLoot> LootClass;
@@ -216,6 +222,8 @@ class AAsEnemyBase : AAsCreature {
         ShieldEffect.Deactivate();
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
         CapsuleComponent.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+        CollisionBox.SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
+        CollisionBox.SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
         UPaperFlipbook Animation = Animations[n"Death"];
         Sprite.SetFlipbook(Animation);
         DeathTimerHandle = System::SetTimer(this, n"OnDeathTimeout", Animation.TotalDuration, false);
@@ -306,6 +314,10 @@ class AAsEnemyBase : AAsCreature {
     UFUNCTION()
     void OnAttackCheck() {
         if(RangedAttack) {
+            SpawnActor(RangeWeaponClass, 
+            GetActorLocation() + FVector(GetActorForwardVector().X * 100, 0, 0),
+            FRotator(0, IsRight ? 0 : 180, 0)
+            );
         }
         else {
             TArray<EObjectTypeQuery> objectTypes;
@@ -315,7 +327,7 @@ class AAsEnemyBase : AAsCreature {
                 objectTypes, false, TArray<AActor>(), EDrawDebugTrace::None, hitResult, true)) {
                 AAsPlayer player = Cast<AAsPlayer>(hitResult.Actor);
                 if(player != nullptr) {
-                    player.OnHitHandle(1, this, EAsDamageType::Melee);
+                    player.OnHitHandle(Damage, this, EAsDamageType::Melee);
                 }
             }
         }
