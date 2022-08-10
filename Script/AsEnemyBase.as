@@ -7,7 +7,7 @@ class AAsEnemyBase : AAsCreature {
     UParticleSystemComponent ShieldEffect;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
-    bool IsWolf = false;
+    EAsEnemyType EnemyType = EAsEnemyType::Wolf;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     int MaxHealth = 10;
@@ -113,19 +113,24 @@ class AAsEnemyBase : AAsCreature {
     UFUNCTION(BlueprintOverride)
     void Tick(float DeltaSeconds) {
         if(!IsDead) {
-            if(!BeHit) {
-                if(PawnSensing()) {
-                    if(!System::IsValidTimerHandle(AttackDelayTimerHandle)) {
-                        AttackDelayTimerHandle = System::SetTimer(this, n"OnAttackDelayTimeout", AttackStartDelay, false);
+            if(EnemyType != EAsEnemyType::Golem) {
+                if(!BeHit) {
+                    if(PawnSensing()) {
+                        if(!System::IsValidTimerHandle(AttackDelayTimerHandle)) {
+                            AttackDelayTimerHandle = System::SetTimer(this, n"OnAttackDelayTimeout", AttackStartDelay, false);
+                        }
+                    }
+                    else {
+                        HandleMovement();
+                        ObstacleDetection();
+                        CliffDetection();
                     }
                 }
                 else {
-                    HandleMovement();
-                    ObstacleDetection();
-                    CliffDetection();
                 }
             }
             else {
+                
             }
         }
     }
@@ -155,11 +160,13 @@ class AAsEnemyBase : AAsCreature {
                     Death();
                 }
                 else if(damageType == EAsDamageType::Melee) {
-                    FVector attackerPos = damageCauser.GetActorLocation();
-                    FVector selfPos = GetActorLocation();
-                    FVector direction = selfPos - attackerPos;
-                    direction.Normalize(0.0001);
-                    LaunchCharacter(FVector(direction.X * 1000, 0, 0), true, true);
+                    if(EnemyType != EAsEnemyType::Golem) {
+                        FVector attackerPos = damageCauser.GetActorLocation();
+                        FVector selfPos = GetActorLocation();
+                        FVector direction = selfPos - attackerPos;
+                        direction.Normalize(0.0001);
+                        LaunchCharacter(FVector(direction.X * 1000, 0, 0), true, true);
+                    }
                     Sprite.SetSpriteColor(FLinearColor::Red);
                     System::ClearAndInvalidateTimerHandle(HurtColorTimerHandle);
                     HurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
@@ -184,12 +191,14 @@ class AAsEnemyBase : AAsCreature {
     }
 
     private void ParticleSounds(USoundBase sound, float32 startTime, UParticleSystem particle, FRotator rotation, FVector scale) {
-        Gameplay::SpawnEmitterAtLocation(particle, GetActorLocation(), rotation, scale);
+        if(EnemyType != EAsEnemyType::Golem) {
+            Gameplay::SpawnEmitterAtLocation(particle, GetActorLocation(), rotation, scale);
+        }
         Gameplay::SpawnSoundAtLocation(sound, GetActorLocation(), StartTime = startTime);
     }
 
     private void FaceToPlayerWhenBeHit() {
-        if(true) {
+        if(EnemyType != EAsEnemyType::Golem) {
             FVector playerPos = Gameplay::GetPlayerCharacter(0).GetActorLocation();
             FVector selfPos = GetActorLocation();
             if(selfPos.X > playerPos.X) {
@@ -365,7 +374,7 @@ class AAsEnemyBase : AAsCreature {
     }
 
     void PatrolAttack() {
-        if(!IsWolf) {
+        if(EnemyType == EAsEnemyType::Witch) {
             for(int i = 0; i <= 2; ++i) {
                 SpawnActor(PatrolWeaponClass, GetActorLocation(), FRotator(50 + 40 * i, 0, 0));
                 Gameplay::SpawnSoundAtLocation(PatrolAttackSound, GetActorLocation(), VolumeMultiplier = 2.0, StartTime = 1.0);
@@ -381,7 +390,7 @@ class AAsEnemyBase : AAsCreature {
     }
 
     void ResetPatrolAttack() {
-        if(!IsWolf) {
+        if(EnemyType == EAsEnemyType::Witch) {
         }
     }
 }
