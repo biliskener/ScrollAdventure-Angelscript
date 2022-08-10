@@ -7,7 +7,10 @@ class AAsBattleLevel: ALevelScriptActor {
     APaperSpriteActor BackgroundActor;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
-    APaperTileMapActor TileMapActor;
+    APaperTileMapActor TileMap_FirstLayer;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    APaperTileMapActor TileMap_SecondLayer;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     ATriggerBox DeathLine;
@@ -27,7 +30,7 @@ class AAsBattleLevel: ALevelScriptActor {
     UFUNCTION(BlueprintOverride)
     void BeginPlay()
     {
-        TileMapComponent = Cast<UPaperTileMapComponent>(TileMapActor.GetComponentByClass(UPaperTileMapComponent::StaticClass()));
+        TileMapComponent = Cast<UPaperTileMapComponent>(TileMap_FirstLayer.GetComponentByClass(UPaperTileMapComponent::StaticClass()));
         TileLayer = TileMapComponent.TileMap.TileLayers[0].Get();
 
         if(BackgroundActor == nullptr) {
@@ -51,6 +54,8 @@ class AAsBattleLevel: ALevelScriptActor {
             CameraActor.SetActorLocation(FVector(PlayerLocation.X, CameraInitLocation.Y, CameraInitLocation.Z));
             FVector BackgroundLocation = BackgroundActor.GetActorLocation();
             BackgroundActor.SetActorLocation(FVector(CameraActor.GetActorLocation().X + CameraInitOffset.X, BackgroundLocation.Y, BackgroundLocation.Z));
+            FVector SecondLayerLocation = TileMap_SecondLayer.GetActorLocation();
+            TileMap_SecondLayer.SetActorLocation(FVector(CameraActor.GetActorLocation().X * 0.5, SecondLayerLocation.Y, SecondLayerLocation.Z));
         }
     }
 
