@@ -110,6 +110,11 @@ class AAsPlayer : AAsCreature {
         }
     }
 
+    UFUNCTION(BlueprintOverride)
+    void Tick(float DeltaSeconds) {
+        
+    }
+
     void Initialize() {
         CurHealth = MaxHealth;
         AsUtil::GetBattleUI().UpdateHP(this, CurHealth);

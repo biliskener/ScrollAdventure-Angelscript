@@ -13,6 +13,9 @@ class AAsBattleLevel: ALevelScriptActor {
     APaperTileMapActor TileMap_SecondLayer;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    AAsGolem BossActor;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     ATriggerBox DeathLine;
 
     UPaperTileMapComponent TileMapComponent;
@@ -20,6 +23,7 @@ class AAsBattleLevel: ALevelScriptActor {
 
     FVector CameraInitLocation;
     FVector CameraInitOffset;
+    FVector BossInitPosition;
 
     AActor GetFirstActorWithTag(FName Tag) {
         TArray<AActor> Actors;
@@ -44,13 +48,15 @@ class AAsBattleLevel: ALevelScriptActor {
         FVector BackgroundLocation = BackgroundActor.GetActorLocation();
         CameraInitOffset = BackgroundLocation - CameraInitLocation;
 
+        BossInitPosition = BossActor.GetActorLocation();
+
         DeathLine.OnActorBeginOverlap.AddUFunction(this, n"OnBeginOverlap");
     }
 
     UFUNCTION(BlueprintOverride)
     void Tick(float DeltaSeconds) {
         FVector PlayerLocation = Gameplay::GetPlayerCharacter(0).GetActorLocation();
-        if(PlayerLocation.X > CameraInitLocation.X) {
+        if(PlayerLocation.X < BossInitPosition.X && PlayerLocation.X > CameraInitLocation.X) {
             CameraActor.SetActorLocation(FVector(PlayerLocation.X, CameraInitLocation.Y, CameraInitLocation.Z));
             FVector BackgroundLocation = BackgroundActor.GetActorLocation();
             BackgroundActor.SetActorLocation(FVector(CameraActor.GetActorLocation().X + CameraInitOffset.X, BackgroundLocation.Y, BackgroundLocation.Z));
