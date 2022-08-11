@@ -118,4 +118,17 @@ class AAsGolem: AAsEnemyBase {
             }
         }
     }
+
+    void BossHpCheck() override {
+        if(CurHealth < 3) {
+            CapsuleComponent.SetCollisionObjectType(ECollisionChannel::ECC_Destructible);
+        }
+    }
+
+    void ExtraTriggerAfterDeath() override {
+        IsBossStart = false;
+        AActor level = Gameplay::GetActorOfClass(AAsBattleLevel::StaticClass());
+        Cast<AAsBattleLevel>(level).OnBossDead();
+        //System::ExecuteConsoleCommand("ce BossDead");
+    }
 }

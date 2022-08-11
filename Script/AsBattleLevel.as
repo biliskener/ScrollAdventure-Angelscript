@@ -49,8 +49,11 @@ class AAsBattleLevel: ALevelScriptActor {
     FVector CameraInitOffset;
     FVector BossInitPosition;
 
-    float BossStartBlockDuration = 0;
-    bool BossStartBlockActive = false;
+    float BossBattleStartBlockDuration = 0;
+    bool BossBattleStartBlockActive = false;
+
+    float BossBattleEndBlockDuration = 0;
+    bool BossBattleEndBlockActive = false;
 
     TArray<UParticleSystemComponent> LightningActorList;
 
@@ -96,18 +99,29 @@ class AAsBattleLevel: ALevelScriptActor {
             TileMap_SecondLayer.SetActorLocation(FVector(CameraActor.GetActorLocation().X * 0.5, SecondLayerLocation.Y, SecondLayerLocation.Z));
         }
 
-        if(BossStartBlockActive) {
-            BossStartBlockDuration += DeltaSeconds;
-            if(BossStartBlockDuration >= 0.5) {
-                BossStartBlockDuration = 0.5;
-                BossStartBlockActive = false;
+        if(BossBattleStartBlockActive) {
+            BossBattleStartBlockDuration += DeltaSeconds;
+            if(BossBattleStartBlockDuration >= 0.5) {
+                BossBattleStartBlockDuration = 0.5;
+                BossBattleStartBlockActive = false;
             }
             FVector Location = BlockInMovingWall.GetActorLocation();
-            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-650, -350), BossStartBlockDuration);
+            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-650, -350), BossBattleStartBlockDuration);
             BlockInMovingWall.SetActorLocation(Location);
 
             Location = BlockOutMovingWall.GetActorLocation();
-            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-650, -350), BossStartBlockDuration);
+            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-650, -350), BossBattleStartBlockDuration);
+            BlockOutMovingWall.SetActorLocation(Location);
+        }
+
+        if(BossBattleEndBlockActive) {
+            BossBattleEndBlockDuration += DeltaSeconds;
+            if(BossBattleEndBlockDuration >= 0.5) {
+                BossBattleEndBlockDuration = 0.5;
+                BossBattleEndBlockActive = false;
+            }
+            FVector Location = BlockOutMovingWall.GetActorLocation();
+            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-350, -650), BossBattleEndBlockDuration);
             BlockOutMovingWall.SetActorLocation(Location);
         }
     }
@@ -128,8 +142,8 @@ class AAsBattleLevel: ALevelScriptActor {
         AAsPlayer player = Cast<AAsPlayer>(OtherActor);
         if(player != nullptr && !BossActor.IsBossStart) {
             BossActor.IsBossStart = true;
-            BossStartBlockActive = true;
-            BossStartBlockDuration = 0;
+            BossBattleStartBlockActive = true;
+            BossBattleStartBlockDuration = 0;
             OverlappedActor.DestroyActor();
         }
     }
@@ -158,8 +172,12 @@ class AAsBattleLevel: ALevelScriptActor {
     void DestroyLightning() {
         if(LightningActorList.Num() > 0) {
             LightningActorList[0].DestroyComponent(LightningActorList[0].Owner);
-            PrintToScreen("Destroying Lightning", 1.0);
             LightningActorList.RemoveAt(0);
         }
+    }
+
+    void OnBossDead() {
+        BossBattleEndBlockActive = true;
+        BossBattleEndBlockDuration = 0;
     }
 }

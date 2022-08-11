@@ -166,11 +166,12 @@ class AAsEnemyBase : AAsCreature {
                         direction.Normalize(0.0001);
                         LaunchCharacter(FVector(direction.X * 1000, 0, 0), true, true);
                     }
+                    else {
+                        BossHpCheck();
+                    }
                     Sprite.SetSpriteColor(FLinearColor::Red);
                     System::ClearAndInvalidateTimerHandle(HurtColorTimerHandle);
                     HurtColorTimerHandle = System::SetTimer(this, n"OnHurtColorTimeout", 0.2, false);
-                }
-                else {
                 }
             }
             else if(damageType == EAsDamageType::Melee) {
@@ -256,18 +257,20 @@ class AAsEnemyBase : AAsCreature {
         UPaperFlipbook Animation = Animations[n"Death"];
         Sprite.SetFlipbook(Animation);
         DeathTimerHandle = System::SetTimer(this, n"OnDeathTimeout", Animation.TotalDuration, false);
-        SetLifeSpan(5.0);
     }
 
     UFUNCTION()
     void OnDeathTimeout() {
         Sprite.SetFlipbook(Animations[n"DeathLoop"]);
         ExtraTriggerAfterDeath();
+        SetLifeSpan(5.0);
     }
 
     void ExtraTriggerAfterDeath() {
-        if(LootClass != nullptr && Math::RandRange(0.0, 1.0) <= 0.3) {
-            SpawnActor(LootClass, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+        if(EnemyType != EAsEnemyType::Golem) {
+            if(LootClass != nullptr && Math::RandRange(0.0, 1.0) <= 0.3) {
+                SpawnActor(LootClass, GetActorLocation() - FVector(0, 0, CapsuleComponent.GetScaledCapsuleHalfHeight()));
+            }
         }
     }
 
@@ -395,5 +398,8 @@ class AAsEnemyBase : AAsCreature {
 
     void MainLogic() {
 
+    }
+
+    void BossHpCheck() {
     }
 }
