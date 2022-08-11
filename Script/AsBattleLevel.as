@@ -19,12 +19,6 @@ class AAsBattleLevel: ALevelScriptActor {
     ATriggerBox DeathLine;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
-    UParticleSystem GolemAttackEffect;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
-    USoundBase GolemAttackSound;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     ATargetPoint LeftLightningTargetPoint;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
@@ -36,12 +30,27 @@ class AAsBattleLevel: ALevelScriptActor {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     ATriggerBox BossStartTriggerBox;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    AAsMovingWall BlockInMovingWall;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    AAsMovingWall BlockOutMovingWall;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    UParticleSystem GolemAttackEffect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    USoundBase GolemAttackSound;
+
     UPaperTileMapComponent TileMapComponent;
     UPaperTileLayer TileLayer;
 
     FVector CameraInitLocation;
     FVector CameraInitOffset;
     FVector BossInitPosition;
+
+    float BossStartBlockDuration = 0;
+    bool BossStartBlockActive = false;
 
     TArray<UParticleSystemComponent> LightningActorList;
 
@@ -86,6 +95,21 @@ class AAsBattleLevel: ALevelScriptActor {
             FVector SecondLayerLocation = TileMap_SecondLayer.GetActorLocation();
             TileMap_SecondLayer.SetActorLocation(FVector(CameraActor.GetActorLocation().X * 0.5, SecondLayerLocation.Y, SecondLayerLocation.Z));
         }
+
+        if(BossStartBlockActive) {
+            BossStartBlockDuration += DeltaSeconds;
+            if(BossStartBlockDuration >= 0.5) {
+                BossStartBlockDuration = 0.5;
+                BossStartBlockActive = false;
+            }
+            FVector Location = BlockInMovingWall.GetActorLocation();
+            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-650, -350), BossStartBlockDuration);
+            BlockInMovingWall.SetActorLocation(Location);
+
+            Location = BlockOutMovingWall.GetActorLocation();
+            Location.Z = Math::GetMappedRangeValueClamped(FVector2D(0.0, 0.5), FVector2D(-650, -350), BossStartBlockDuration);
+            BlockOutMovingWall.SetActorLocation(Location);
+        }
     }
 
     UFUNCTION()
@@ -102,8 +126,11 @@ class AAsBattleLevel: ALevelScriptActor {
     UFUNCTION()
     void OnBossStartBeginOverlap(AActor OverlappedActor, AActor OtherActor) {
         AAsPlayer player = Cast<AAsPlayer>(OtherActor);
-        if(player != nullptr) {
+        if(player != nullptr && !BossActor.IsBossStart) {
             BossActor.IsBossStart = true;
+            BossStartBlockActive = true;
+            BossStartBlockDuration = 0;
+            OverlappedActor.DestroyActor();
         }
     }
 
