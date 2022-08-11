@@ -130,11 +130,10 @@ class AAsEnemyBase : AAsCreature {
                 }
             }
             else {
-                
+                MainLogic();
             }
         }
     }
-
 
     UFUNCTION()
     void OnBeginOverlap(
@@ -392,5 +391,9 @@ class AAsEnemyBase : AAsCreature {
     void ResetPatrolAttack() {
         if(EnemyType == EAsEnemyType::Witch) {
         }
+    }
+
+    void MainLogic() {
+
     }
 }

@@ -7,7 +7,7 @@ class AAsPlayer : AAsCreature {
     UParticleSystemComponent GuardEffect;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
-    int MaxHealth = 8;
+    int MaxHealth = 32;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
     TSubclassOf<UCameraShakeBase> CameraShakeClass;

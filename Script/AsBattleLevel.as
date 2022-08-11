@@ -18,12 +18,32 @@ class AAsBattleLevel: ALevelScriptActor {
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
     ATriggerBox DeathLine;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    UParticleSystem GolemAttackEffect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    USoundBase GolemAttackSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    ATargetPoint LeftLightningTargetPoint;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    ATargetPoint RightLightningTargetPoint;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    ATargetPoint MiddleLightningTargetPoint;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration")
+    ATriggerBox BossStartTriggerBox;
+
     UPaperTileMapComponent TileMapComponent;
     UPaperTileLayer TileLayer;
 
     FVector CameraInitLocation;
     FVector CameraInitOffset;
     FVector BossInitPosition;
+
+    TArray<UParticleSystemComponent> LightningActorList;
 
     AActor GetFirstActorWithTag(FName Tag) {
         TArray<AActor> Actors;
@@ -32,8 +52,7 @@ class AAsBattleLevel: ALevelScriptActor {
     }
 
     UFUNCTION(BlueprintOverride)
-    void BeginPlay()
-    {
+    void BeginPlay() {
         TileMapComponent = Cast<UPaperTileMapComponent>(TileMap_FirstLayer.GetComponentByClass(UPaperTileMapComponent::StaticClass()));
         TileLayer = TileMapComponent.TileMap.TileLayers[0].Get();
 
@@ -50,7 +69,11 @@ class AAsBattleLevel: ALevelScriptActor {
 
         BossInitPosition = BossActor.GetActorLocation();
 
-        DeathLine.OnActorBeginOverlap.AddUFunction(this, n"OnBeginOverlap");
+        DeathLine.OnActorBeginOverlap.AddUFunction(this, n"OnDeathLineBeginOverlap");
+
+        BossStartTriggerBox.OnActorBeginOverlap.AddUFunction(this, n"OnBossStartBeginOverlap");
+
+        BossActor.SpawnLightningEvent.AddUFunction(this, n"OnSpawnLightning");
     }
 
     UFUNCTION(BlueprintOverride)
@@ -66,13 +89,50 @@ class AAsBattleLevel: ALevelScriptActor {
     }
 
     UFUNCTION()
-    void OnBeginOverlap(AActor OverlappedActor, AActor OtherActor) {
+    void OnDeathLineBeginOverlap(AActor OverlappedActor, AActor OtherActor) {
         AAsCreature creature = Cast<AAsCreature>(OtherActor);
         if(creature != nullptr) {
             creature.OnHitHandle(999, this, EAsDamageType::Both);
         }
         else {
             OtherActor.DestroyActor();
+        }
+    }
+
+    UFUNCTION()
+    void OnBossStartBeginOverlap(AActor OverlappedActor, AActor OtherActor) {
+        AAsPlayer player = Cast<AAsPlayer>(OtherActor);
+        if(player != nullptr) {
+            BossActor.IsBossStart = true;
+        }
+    }
+
+    UFUNCTION()
+    void OnSpawnLightning(AAsGolem golem, EAsSideOfBoss side) {
+        FVector location = golem.GetActorLocation();
+        switch(side) {
+            case EAsSideOfBoss::Left:
+                location = LeftLightningTargetPoint.GetActorLocation();
+                break;
+            case EAsSideOfBoss::Right:
+                location = RightLightningTargetPoint.GetActorLocation();
+                break;
+            default:
+                location = MiddleLightningTargetPoint.GetActorLocation();
+                break;
+        }
+        Gameplay::SpawnSoundAtLocation(nullptr, location);
+        UParticleSystemComponent effect = Gameplay::SpawnEmitterAtLocation(GolemAttackEffect, location, Scale = FVector(5.0, 5.0, 5.0));
+        LightningActorList.Add(effect);
+        System::SetTimer(this, n"DestroyLightning", 0.2, false);
+    }
+
+    UFUNCTION()
+    void DestroyLightning() {
+        if(LightningActorList.Num() > 0) {
+            LightningActorList[0].DestroyComponent(LightningActorList[0].Owner);
+            PrintToScreen("Destroying Lightning", 1.0);
+            LightningActorList.RemoveAt(0);
         }
     }
 }
