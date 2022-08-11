@@ -4,6 +4,9 @@ class AAsEnemyBase : AAsCreature {
     UBoxComponent CollisionBox;
 
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder)
+    USphereComponent OptimizationSphere;
+
+    UPROPERTY(DefaultComponent, Attach = CollisionCylinder)
     UParticleSystemComponent ShieldEffect;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Configuration - Data")
@@ -89,6 +92,11 @@ class AAsEnemyBase : AAsCreature {
         IsRight = GetActorRotation().Yaw < 180;
 
         CollisionBox.OnComponentBeginOverlap.AddUFunction(this, n"OnBeginOverlap");
+
+        if(EnemyType != EAsEnemyType::Golem) {
+            OptimizationSphere.OnComponentBeginOverlap.AddUFunction(this, n"OnOptimizationSphereBeginOverlap");
+            OptimizationSphere.OnComponentEndOverlap.AddUFunction(this, n"OnOptimizationSphereEndOverlap");
+        }
     }
 
     UFUNCTION(BlueprintOverride)
@@ -147,6 +155,28 @@ class AAsEnemyBase : AAsCreature {
         }
     }
 
+    UFUNCTION()
+    void OnOptimizationSphereBeginOverlap(
+        UPrimitiveComponent OverlappedComponent, AActor OtherActor,
+        UPrimitiveComponent OtherComponent, int OtherBodyIndex,
+        bool bFromSweep, const FHitResult&in Hit)
+    {
+        AAsPlayer player = Cast<AAsPlayer>(OtherActor);
+        if(player != nullptr) {
+            ActorTickEnabled = true;
+        }
+    }
+
+    UFUNCTION()
+    void OnOptimizationSphereEndOverlap(
+        UPrimitiveComponent OverlappedComponent, AActor OtherActor,
+        UPrimitiveComponent OtherComponent, int OtherBodyIndex)
+    {
+        AAsPlayer player = Cast<AAsPlayer>(OtherActor);
+        if(player != nullptr) {
+            ActorTickEnabled = false;
+        }
+    }
 
     void OnHitHandle(int damage, AActor damageCauser, EAsDamageType damageType) override {
         if(!IsDead) {

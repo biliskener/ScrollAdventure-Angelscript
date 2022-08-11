@@ -3,6 +3,9 @@ class AAsPlayer : AAsCreature {
     UPROPERTY(DefaultComponent)
     UInputComponent ScriptInputComponent;
 
+    UPROPERTY(DefaultComponent, Attach = CollisionCylinder)
+    USphereComponent OptimizationSphere;
+
     UPROPERTY(DefaultComponent, Attach = CollisionCylinder, Category = Effects)
     UParticleSystemComponent GuardEffect;
 
